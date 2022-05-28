@@ -40,15 +40,16 @@ Annotates completed plasmid sequence fasta files
     ------prokka_process.py
     ------abricate_dw.py
     ------abricate_test.py
+    ------gbk_update.py
     ------visual_map.py
     ---lr_file.py
     ---linear-regression.py 
 
 **SCRIPTS:**
   1) PlasAnn.py
-     - INPUT: A 1 or 0 depending on what parts of the program need to be run (Will eventually need location information for the folder containing fasta files for each plasmid. This information is currently built into the pipeline but it will be changed before the final version is released)
-     - OUTPUT: TSV final annotation, plasmid map, and acquisition cost linear regression analysis for all plasmids 
-     - DESCRIPTION: PlasAnn is the script a user must call to start annotating plasmids. It reads through my fasta folder, which contains a fasta file for each plasmid I want analysed, one fasta file at a time, taking the plasmid name from the fasta file and passing it on to bgbm.sh, a shell script calling each script in the pipeline in their respective order in order to annotate the given plasmid.
+     - INPUT: When you initially run PlasAnn, it will ask you to specify whether to run the entire script or just the linear regression pipeline. If you want to run the entirety of the program, you may specify what plasmids you want to rerun the program on (including ALL). Follow the instructions as they appear.
+     - OUTPUT: TSV final annotation, GBK final annotation, GFF final annotation, plasmid map, and acquisition cost linear regression analysis for all plasmids 
+     - DESCRIPTION: PlasAnn is the script a user must call to start annotating plasmids. It reads through the fasta folder, which contains a fasta file for each plasmid you want analysed, one fasta file at a time, taking the plasmid name from the fasta file and passing it on to bgbm.sh, a shell script calling each script in the pipeline in their respective order in order to annotate the given plasmid.
 You will be prompted to enter either a 0 or 1 depending on whether you want to run the entire pipeline or just the linear regression script.
 
   2) bgbm.sh
@@ -61,7 +62,8 @@ Order in which these scripts are called:
     3) prokka_process.py
     4) abricate_dw.py
     5) abricate_test.py
-    6) visual_map.py
+    6) gbk_update.py
+    7) visual_map.py
 
   3) annotate.py
      - INPUT: Plasmid name
@@ -72,7 +74,6 @@ Order in which these scripts are called:
      - INPUT: Plasmid name and matches.csv for the given plasmid
      - OUTPUT: Prokka output for each accession ID (go into gb_match folder for the given plasmid), prokka2go.txt file containing the corresponding GO ID and functional label for each identified gene, plasmid_name-go.tsv, and a new matches.csv file containing a more limited list of accession ID matches
      - DESCRIPTION: (1) Creates directories for storing prokka results for each accession ID for the given plasmid (2) Runs prokka in default mode (no gbk file uploaded) by calling prokka_def.sh shell script and runs prokka with the protein flag once for each accession ID in matches.csv, utilizing each accession ID’s corresponding gbk file, by calling the prokka.sh shell script. These shell scripts call on prokka2go.py to process the given gene annotations and add their GO identified functions to the initial annotation of the plasmid (4) Create plasmid_name-go.tsv for each accession ID, which merges the prokka generated annotation of the plasmid and the matching GO ID’s into one tsv file (5) Create a new matches.csv file to compile most accurate gbk matches based on the prokka output 
-
 
   5) prokka_def.sh
      - INPUT: Output directory for prokka and Plasmid name
@@ -99,23 +100,27 @@ Order in which these scripts are called:
      - OUTPUT: ab_results folder for each accession ID listed in matches.csv for that particular plasmid, and 2 text files per database (total of 8). NCBI, CARD, and     RESFINDER list matching antibiotic resistance genes. PLASMIDFINDER lists the matching incompatibility group for the given plasmid.
      - DESCRIPTION: Run abricate w/ncbi, card, resfinder, and plasmidfinder databases for each accession ID match 
 
-
   10) abricate_test.py 
       - INPUT: Plasmid name
       - OUTPUT: Edited final.tsv file that contains the final annotation of the given plasmid and final.gff file that contains the final annotation of the given plasmid + incompatibility group + fasta sequence
       - DESCRIPTION: After running abricate with 3 different antibiotic resistance databases for each accession ID, check that 2/3 databases found the same resistance genes, and write the names of these confirmed consensus resistance genes to the final annotation for the plasmid. Also add the incompatibility group to the final gff for the plasmid found by plasmidfinder
 
-  11) visual_map.py
+  11) gbk_update.py
+      - INPUT: Plasmid name
+      - OUTPUT: Edited final.gbk file that contains the final annotation of the given plasmid + product information + translation information
+      - DESCRIPTION: Once the finalized annotation is made, take the gbk file generated by prokka in its default setting and make a copy of it. In this copy, called final.gbk, update gene names in the corresponding locus locations and any other information pertaining to those genes.
+
+  12) visual_map.py
      - INPUT: Plasmid name
      - OUTPUT: PDF of plasmid map for given plasmid
      - DESCRIPTION: Using GenomeDiagram, visual_map.py parses through the final annotation for the given plasmid to create a plasmid map of the specified plasmid. Each gene on the plasmid is labeled to fit one of the following categories of interest: Conjugation, Antibiotic Resistance, Stress-Response, Toxin, Metabolism, Other, Unknown (More will be added, such as Replication, Background/Backbone, and Antitoxin)
 
-  12) lr_file.py
+  13) lr_file.py
       - INPUT: File containing acquisition cost information for all or some of the plasmids analysed previously in the script
-      - OUTPUT: Linear Regression file, which will be used in the R-script to run a linear regression analysis on the plasmids and the acquisition cost data, with the following information: 1) Binary plasmid gene presence information for each plasmid 2) Respective number of gene functions for each function 3) Acquisition cost data 4) Plasmid data (ie. source, etc.)
+      - OUTPUT: Linear Regression file, which will be used in the python-script to run a linear regression analysis on the plasmids and the acquisition cost data, with the following information: 1) Binary plasmid gene presence information for each plasmid 2) Respective number of gene functions for each function 3) Acquisition cost data 4) Plasmid data (ie. source, etc.)
       - DESCRIPTION: Using PSI CD-Hit, I create a list of unique homologous genes found across all of the plasmids analysed for the purposes of adding binary information about gene presence for each plasmid in the final linear regression file. I append acquisition cost data, plasmid data, gene presence, and gene function data for each plasmid to this file so the file contains a table containing data for each plasmid in each corresponding row.  
 
-  13) linear-regression.py
+  14) linear-regression.py
       - INPUT: PlasmidRegression.csv created by lr_file.py
       - OUTPUT: Print linear regression results + results.txt file containing linear regression output
       - DESCRIPTION: Print linear regression results based on gene presence data, plasmid incompatibility group, gene groups, and acquisition cost data.
@@ -132,6 +137,7 @@ Order in which these scripts are called:
       1) Enter 1 : For running ONLY the linear regression pipeline. Do this ONLY if you have all the annotation data OR you ran the FULL plasmid annotation pipeline. 
       2) Enter 0 : Run the FULL pipeline (annotation + linear regression).
          - WARNING: Depending on how many plasmids you are analyzing, running the full pipeline will take a while. If you decide to do this, please go into your computer's settings and set up your computer so it doesn’t turn off your screen or turn on the screen saver when inactive. Do not turn off your computer while the program runs; this could lead to errors or could cause the program to stall!
+         - The program will ask you which plasmids you would like to rerun through the pipeline (if any or if all).
 5) Wait for the program to finish! Do check on it from time to time to make sure that it’s running and let me know if any issues/questions arise.
 
 **ERROR HANDLING**
@@ -145,6 +151,11 @@ Order in which these scripts are called:
      3) For reinstalling
         - conda env create --file ./scripts/prokka_env.yml
         - conda env create --file ./scripts/abricate_env.yml
+     4) Additional Code to run:
+        - conda install -y -c biobuilds perl=5.22
+        - conda install -y -c conda-forge parallel
+        - conda install -y -c bioconda prodigal blast=2.2 tbl2asn prokka
+
    - If the following does not work, email me ASAP (jc4919@barnard.edu). It is possible that another program may be needed to correctly install prokka or abricate. If the issue persists, check that your virus blocking software or other applications are not installing or blocking prokka/abricate.
 
 2) Connection Issues
