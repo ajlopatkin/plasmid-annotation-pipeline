@@ -1,15 +1,19 @@
 name: abricate_env
 channels:
+  - anaconda
   - bioconda
   - conda-forge
   - defaults
+  - r
 dependencies:
   - abricate=1.0.1=h1341992_0
   - any2fasta=0.4.2=2
+  - biopython=1.79=py39h89e85a6_1
   - blast=2.10.1=pl526hce2a5c9_2
   - bzip2=1.0.8=haf1e3a3_3
   - c-ares=1.11.0=0
-  - ca-certificates=2020.6.20=hecda079_0
+  - ca-certificates=2022.5.18.1=h033912b_0
+  - certifi=2022.5.18.1=py39h6e9494a_0
   - clustalw=2.1=h770b8ee_5
   - curl=7.71.1=hcb81553_8
   - entrez-direct=13.9=pl526h375a9b1_0
@@ -21,15 +25,23 @@ dependencies:
   - icu=67.1=hb1e8313_0
   - jpeg=9d=h0b31af3_0
   - krb5=1.17.1=h75d18d8_3
+  - lcms2=2.12=hf1fd2bf_0
+  - libblas=3.9.0=8_openblas
+  - libcblas=3.9.0=8_openblas
   - libcurl=7.71.1=h9bf37e3_8
   - libcxx=11.0.0=h439d374_0
   - libdb=6.1.26=0
   - libedit=3.1.20191231=h0678c8f_2
   - libev=4.33=haf1e3a3_1
+  - libffi=3.3=hb1e8313_2
   - libgcc=4.8.5=1
   - libgd=2.2.5=h47eb126_1008
+  - libgfortran=5.0.0=9_3_0_h6c81a4c_23
+  - libgfortran5=9.3.0=h6c81a4c_23
   - libiconv=1.16=haf1e3a3_0
+  - liblapack=3.9.0=8_openblas
   - libnghttp2=1.41.0=h8a08a2b_1
+  - libopenblas=0.3.12=openmp_h54245bb_1
   - libpng=1.6.37=hb0a8c7a_2
   - libssh2=1.9.0=h8a08a2b_5
   - libtiff=4.1.0=h2ae36a8_6
@@ -40,7 +52,9 @@ dependencies:
   - llvm-openmp=11.0.0=h73239a0_1
   - lz4-c=1.9.2=hb1e8313_3
   - ncurses=6.2=hb1e8313_2
-  - openssl=1.1.1h=haf1e3a3_0
+  - numpy=1.20.3=py39h139494b_2
+  - olefile=0.46=pyhd3eb1b0_0
+  - openssl=1.1.1o=hfe4f2af_0
   - paml=4.9=h01d97ff_5
   - pcre=8.44=hb1e8313_0
   - perl=5.26.2=haec8ef5_1006
@@ -251,11 +265,20 @@ dependencies:
   - perl-xml-xpathengine=0.14=pl526_2
   - perl-xsloader=0.24=pl526_0
   - perl-yaml=1.29=pl526_0
+  - pillow=7.2.0=py39h31b929e_2
+  - pip=21.2.4=py39hecd8cb5_0
+  - python=3.9.7=h88f2d9e_1
+  - python_abi=3.9=2_cp39
+  - readline=8.1=h9ed2024_0
+  - reportlab=3.5.67=py39h13d60c0_1
+  - setuptools=61.2.0=py39hecd8cb5_0
+  - sqlite=3.38.2=h707629a_0
   - tidyp=1.04=h0b31af3_2
   - tk=8.6.10=hb0a8c7a_1
+  - tzdata=2022a=hda174b7_0
   - unzip=6.0=haf1e3a3_2
+  - wheel=0.37.1=pyhd3eb1b0_0
   - xz=5.2.5=haf1e3a3_1
   - zlib=1.2.11=h7795811_1010
   - zstd=1.4.5=h289c70a_2
 prefix: /Users/alopatki/anaconda3/envs/abricate_env
-

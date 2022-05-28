@@ -1,36 +1,27 @@
 #!/bin/bash
-source ~/miniconda3/etc/profile.d/conda.sh
-
+CONDA_BASE=$(conda info --base)
+source $CONDA_BASE/etc/profile.d/conda.sh
 plasmid=$1
 
+## Find acceptably annotated plasmids 
 python annotate.py $plasmid
 
-#Use prokka to determine gene accuracy between accession ID's
-
-# Get the Conda source path
-#CONDA_BASE=$(conda info --base)
-
-# Activate the conda environment
-#source $CONDA_BASE/etc/profile.d/conda.sh
-
-#conda init
-#conda activate prokka_env
+##Use prokka to determine gene accuracy between accession ID's
 python prokka_nr.py $plasmid
-#conda deactivate
-
+conda activate prokka_env
 python prokka_process.py $plasmid
+conda deactivate
 
-#Use abricate to update annotation with antibiotic genes + create gff
-#Create final.tsv and final.gff files
-#conda activate abricate_env
+##Use abricate to update annotation with antibiotic genes + create gff
+conda activate abricate_env
 python abricate_dw.py $plasmid
-#conda deactivate
-#cat ./plasmids/$plasmid/final.tsv
-
 python abricate_test.py $plasmid
 
-#Create final.gbk file
+##Create final.gbk file
 python gbk_update.py $plasmid
 
-#Create plasmid map
+##Create plasmid map
 python visual_map.py $plasmid
+
+##deactivate conda
+conda deactivate

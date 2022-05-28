@@ -12,6 +12,8 @@ import time
 def main(plasmid):
 	start=time.time_ns()
 	print("PROKKA PROCESS FOR " + plasmid)
+
+	
         #delete old match csv and create a new matches.csv file that contains more limited list of matches
 	matches=[]
 	with open("./../output/plasmids/" + plasmid + "/matches.csv") as csvfile:

@@ -11,15 +11,18 @@ import os
 import csv
 import argparse
 
+#list of card coordinates based on gene names
+
 def main(plasmid):
-	#Identify lengths for each locus tag in the final tsv to verify res_gene match locations
-	length_check=[]
-	with open("./../output/plasmids/" + plasmid + "/final.tsv") as lngth_chk:
-		lnread=csv.reader(lngth_chk, delimiter='\t')
-		for line in lnread:
-			print(line)
-			if "locus_tag" not in line[0]:
-				length_check.append(line[2])
+	#Identify start location for each locus tag in the final tsv to verify res_gene match locations
+	start_check=[]
+	with open("./../output/plasmids/" + plasmid + "/gb_match/default/pk_results/" + plasmid + ".gbk") as start_chk:
+		for line in start_chk.readlines():
+			if line.startswith(' ' * 5 + 'CDS'):
+				coordinates=line[8:].strip().strip("complement()")
+				strt_index=0
+				end_index=coordinates.index('..')
+				start_check.append(int(coordinates[strt_index:end_index]))
 
 	inc_group=[]
 	res_genes=[]
@@ -30,16 +33,15 @@ def main(plasmid):
 	res_card=[]
 	res_finder=[]
 	pla_finder=[]
-	found=[res_ncbi, res_card, res_finder]
+	found=[res_card, res_finder, res_ncbi]
 
-	directory="./../output/plasmids/" + plasmid + "/ab_results")
+	directory="./../output/plasmids/" + plasmid + "/ab_results"
 	os.system("mkdir " + directory)
 	databases=['ncbi', 'card', 'resfinder', 'plasmidfinder']
 	for base in databases:
 		with open(directory + "/" + base + ".txt") as csvfile:
 				res_read=csv.reader(csvfile, delimiter='	')
 				for inc_found in res_read:
-					print(inc_found)
 					if(inc_found[5] not in "GENE"):
 						if base in "ncbi":
 							res_ncbi.append(inc_found)
@@ -56,88 +58,90 @@ def main(plasmid):
 			print("CURR LIST OF RESISTANCE GENES IN PLASMID")
 			print(list)
 			for resgene in list:
-				print("CURR LIST UPDATE")
-				print(list)
 				print("CURRENT GENE:" + resgene[5])
 				match=1
 				for cmp in found[compare%3]:
-					if (resgene[5].lower() in cmp[5].lower() or cmp[5].lower() in resgene[5].lower()) and int(resgene[2])==int(cmp[2]):
-						resloc=resgene[6].find('/')
-						cmploc=cmp[6].find('/')
-						print(resloc)
-						if resgene[6][resloc+1:] not in length_check and cmp[6][cmploc+1:] in length_check:
-							resgene[6]=cmp[6]
+					cmpgene=cmp[5]
+					if '-' in cmp[5]:
+						line_index=cmp[5].index('-')
+						print(line_index)
+						print(cmp[5][:5])
+						if line_index>=4 and line_index!=len(cmp[5]):
+							cmpgene=cmp[5][:line_index]
+					print("COMPARE TO " + cmp[5])
+					if (resgene[5].lower() in cmpgene.lower() or cmpgene.lower() in resgene[5].lower()) and abs(int(resgene[2])-int(cmp[2]))-300:
+						resloc=resgene[2]
+						cmploc=cmp[2]
+						if int(resloc) not in start_check and cmploc in start_check:
+							resgene[2]=cmp[2]
 
 						match=match+1
-							#print("FOUND BEFORE REMOVAL")
-							#print(found[compare%3])
-						found[compare%3].remove(cmp)
-							#print("REMOVED MATCH")
-							#print(found[compare%3])
+						print("Match Found!")
+						#found[compare%3].remove(cmp)
 
 				for cmp in found[(compare+1)%3]:
-					if (resgene[5].lower() in cmp[5].lower() or cmp[5].lower() in resgene[5].lower()) and int(resgene[2])==int(cmp[2]):
-						resloc=resgene[6].find('/')
-						cmploc=cmp[6].find('/')
-						if resgene[6][resloc+1:] not in length_check and cmp[6][cmploc+1:] in length_check:
-							resgene[6]=cmp[6]
+					print("COMPARE TO " + cmp[5])
+					cmpgene=cmp[5]
+					if '-' in cmp[5]:
+						line_index=cmp[5].index('-')
+						print(line_index)
+						print(cmp[5][:5])
+						if line_index>=4 and line_index!=len(cmp[5]):
+							cmpgene=cmp[5][:line_index]
+
+					print("COMPARE TO " + cmp[5])
+					if (resgene[5].lower() in cmpgene.lower() or cmpgene.lower() in resgene[5].lower()) and abs(int(resgene[2])-int(cmp[2]))-300:
+						resloc=resgene[2]
+						cmploc=cmp[2]
+						if resloc not in start_check and cmploc in start_check:
+							resgene[2]=cmp[2]
 						match=match+1
-							#print("FOUND BEFORE REMOVAL")
-							#print(found[(compare+1)%3])
-						found[(compare+1)%3].remove(cmp)
-							#print("REMOVED MATCH")
-							#print(found[(compare+1)%3])
+						print("Match Found!")
+						#found[(compare+1)%3].remove(cmp)
 
 				if match > 1:
-					print("BEFORE APPENDING AND ADDING MATCHES")
-					print(res_genes)
 					if len(res_genes)==0:
-						print("APPENDING:" + resgene[5])
 						res_genes.append([resgene, match])
 					else:
 						appnd=1
 						for curr in res_genes:
-							if (curr[0][5] in resgene[5] or resgene[5] in curr[0][5]) and int(resgene[2])==int(curr[0][2]):
+							if (curr[0][5] in resgene[5] or resgene[5] in curr[0][5]):
 								curr[1]=int(curr[1]) + match
 								appnd=0
-								print("ADDED MATCH FOR " + resgene[5])
 								break
 						if appnd==1:
-							print("APPENDING:" + resgene[5])
 							res_genes.append([resgene, match])
 				else:
-					print("NO MATCHES")
-					print("CURRENT RESGENES")
-					print(res_genes)
+					print("NO MATCHES FOR " + resgene[5])
 					print('\n')
-				compare=compare+1
+			compare=compare+1
 
-			#Append found inc groups to inc_finder, matching the same in_groups and keeping track of their total matches and accession ID gene count information
-			inc_finder=[]
-			for group in pla_finder:
-				if len(inc_finder)==0:
-					inc_finder.append([group[5], 1, row['Genes']])
-				else:
-					for inc in inc_finder:
-						if group[5] in inc[0] or inc[0] in group[5]:
-							inc[1]=inc[1]+1
-						else:
-							inc_finder.append([group[5], 1, row['Genes']])
-
-			#Sort through inc_finder and append valid inc groups to inc_group
-			final_inc=[]
+	#Append found inc groups to inc_finder, matching the same in_groups and keeping track of their total matches and accession ID gene count information
+	inc_finder=[]
+	for group in pla_finder:
+		if len(inc_finder)==0:
+			inc_finder.append([group[5], 1])
+		else:
 			for inc in inc_finder:
-				if len(final_inc)==0:
-					final_inc.append(inc)
+				if group[5] in inc[0] or inc[0] in group[5]:
+					inc[1]=inc[1]+1
 				else:
-					for final in final_inc:
-						if inc[1] > final[1]:
-							final_inc=[inc]
-						elif inc[1] == final[1]:
-							if inc[0] not in final[0] or final[0] not in inc[0]:
-								final_inc.append(inc)
-			for inc in final_inc:
-				inc_group.append(inc)
+					inc_finder.append([group[5], 1])
+
+	#Sort through inc_finder and append valid inc groups to inc_group
+	final_inc=[]
+	for inc in inc_finder:
+		if len(final_inc)==0:
+			final_inc.append(inc)
+		else:
+			for final in final_inc:
+				if inc[1] > final[1]:
+					final_inc=[inc]
+				elif inc[1] == final[1]:
+					if inc[0] not in final[0] or final[0] not in inc[0]:
+						final_inc.append(inc)
+	for inc in final_inc:
+		inc_group.append(inc)
 
 			#KEPT IN CASE FURTHER PROCESSING IS NEEDED: IGNORE OTHERWISE!
 			#with open("./plasmids/" + plasmid + "/tmp.tsv", 'w') as tmp_file:
@@ -164,7 +168,7 @@ def main(plasmid):
 
 	#Sort through res_genes, match the same resistance genes from different accession ID's, and get concensus resistance gene(s)
 	final_res=[]
-	print("RESGENES")
+	print("RES-GENES")
 	print(res_genes)
 	for resgene in res_genes:
 		if len(final_res)==0:
@@ -174,52 +178,81 @@ def main(plasmid):
 			for final in final_res:
 				if int(resgene[0][2])==int(final[0][2]):
 					locmatch=1
-					print("SAME LOCATION:" + resgene[0][5] + " and " + final[0][5])
 					if int(resgene[1]) > int(final[1]):
 						final=resgene
 						break
 				else:
-					print("COMPARE LENGTHS TO CHECK IF REPLACEMENT IS NEEDED")
-					print("COMPARE " + final[0][5] + " and " + resgene[0][5])
-					loc1=resgene[0][6].find('/')
-					loc2=final[0][6].find('/')
-					if (resgene[0][5] in final[0][5] or final[0][5] in resgene[0][5]) and (final[0][6][loc2+1:] not in length_check and resgene[0][6][loc1+1] in length_check):
-						final[0][6]=resgene[0][6]
+					print("COMPARE COORDINATES TO CHECK IF REPLACEMENT IS NEEDED")
+					if (resgene[0][5] in final[0][5] or final[0][5] in resgene[0][5]) and (final[0][2] not in start_check and resgene[0][2] in start_check):
+						final[0][2]=resgene[0][2]
 			if locmatch==0:
 				final_res.append(resgene)
+	
+	print('\n')
 	print("FINAL RESISTANCE GENE LIST")
 	print(final_res)
-
+	print('\n')
+	
+	#determine locus locations for writing to final tsv
+	locus={}
+	print("DETERMINE POSITIONS")
+	for final in final_res:
+		change=0
+		for start in start_check:
+			if int(final[0][2])==int(start):
+				locus[str(start_check.index(int(final[0][2])))]=final
+				break
+			else:
+				if change==0:
+					change=abs(int(final[0][2])-int(start))
+				elif change<abs(int(final[0][2])-int(start)):
+					locus[str(start_check.index(start))]=final
+					break
+				else:
+					change=abs(int(final[0][2])-int(start))
+	
 	#write resistance genes into their corresponding positions in the final annotation
 	with open("./../output/plasmids/" + plasmid + "/tmp.tsv", 'w') as tmp_file:
 		tmpwrite=csv.writer(tmp_file, delimiter='\t')
 		with open("./../output/plasmids/" + plasmid + "/final.tsv") as final_file:
 			finalread=csv.reader(final_file, delimiter='\t')
+			
+			currlocus=0
+			for finaline in finalread:
+				if "locus_tag" not in finaline:
+					if str(currlocus) in locus:
+						finaline[3]=locus[str(currlocus)][0][5]
+						finaline[6]=locus[str(currlocus)][0][13]
+						finaline[7]=""
+						finaline[9]="Antibiotic Resistance"
+					
+				tmpwrite.writerow(finaline)	
+				currlocus+=1
 
-			if len(final_res) > 0:
-				curr=0
-				for finaline in finalread:
-					print("#" + str(curr))
-					curr=curr+1
-					for resgene in final_res:
-						print(resgene)
-						location=resgene[0][6].find('/')
-						coverage=resgene[0][6][location+1:]
-						if finaline[2]==coverage:
-							if finaline[3] not in resgene[0][5] and resgene[0][5] not in finaline[3]:
-								finaline[3]=resgene[0][5]
-								finaline[6]=resgene[0][13]
-								finaline[9]="Antibiotic Resistance"
-							else:
-								if len(resgene[0][5])>len(finaline[3]):
-									finaline[3]=resgene[0][5]
-									finaline[6]=resgene[0][13]
-									finaline[9]="Antibiotic Resistance"
-					print(finaline)
-					tmpwrite.writerow(finaline)
-			else:
-				for finaline in finalread:
-					tmpwrite.writerow(finaline)
+			#if len(final_res) > 0:
+			#	curr=0
+			#	for finaline in finalread:
+			#		print("#" + str(curr))
+			#		curr=curr+1
+			#		for resgene in final_res:
+			#			print(resgene)
+			#			location=resgene[0][6].find('/')
+			#			coverage=resgene[0][6][location+1:]
+			#			if finaline[2]==coverage:
+			#				if finaline[3] not in resgene[0][5] and resgene[0][5] not in finaline[3]:
+			#					finaline[3]=resgene[0][5]
+			#					finaline[6]=resgene[0][13]
+			#					finaline[9]="Antibiotic Resistance"
+			#				else:
+			#					if len(resgene[0][5])>len(finaline[3]):
+			#						finaline[3]=resgene[0][5]
+			#						finaline[6]=resgene[0][13]
+			#						finaline[9]="Antibiotic Resistance"
+			#		print(finaline)
+			#		tmpwrite.writerow(finaline)
+			#else:
+			#	for finaline in finalread:
+			#		tmpwrite.writerow(finaline)
 
 		os.system("mv ./../output/plasmids/" + plasmid + "/tmp.tsv ./../output/plasmids/" + plasmid + "/final.tsv")
 
@@ -229,14 +262,16 @@ def main(plasmid):
 
 	#sort through chosen inc groups and pick the one that was chosen most frequently
 	inc=[]
+	print("INC GROUP")
+	print(inc_group)
 	for group in inc_group:
+		print("INC")
+		print(inc)
 		if len(inc)==0:
 			inc.append(group)
 		else:
 			for cmp in inc:
-				if int(cmp[2])<int(group[2]):
-					inc=[group]
-				elif int(cmp[2])==int(group[2]) and int(cmp[1])>int(group[1]):
+				if int(cmp[1])<int(group[1]):
 					inc=[group]
 	inc_concensus=""
 	if len(inc)>0:

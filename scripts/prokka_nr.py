@@ -27,6 +27,7 @@ def main(plasmid):
 				os.system("mkdir ./../output/plasmids/" + plasmid + "/gb_match/default/pk_results")
 				outdir="./../output/plasmids/" + plasmid + "/gb_match/default/pk_results"
 		
+
 				#Run Prokka
 				#OLD CODE
 				#os.system("CONDA_BASE=$(conda info --base)")
@@ -45,6 +46,9 @@ def main(plasmid):
 				#NEW CODE FOR RUNNING PROKKA
 				new_matches.append([row['Matches'], row['Genes']])
 				os.system("/bin/bash prokka_def.sh " + outdir + " " + plasmid)
+
+				if os.path.isfile(outdir + "/" + plasmid + "-go.tsv"):
+					continue
 
 				#append prokka2go results to initial prokka annotation file
 				with open("./../output/plasmids/" + plasmid + "/gb_match/default/pk_results" + "/" + plasmid + "-go.tsv", 'w') as cmptsv:
@@ -65,34 +69,37 @@ def main(plasmid):
 										cmpwrite.writerow(new_row[0])
 										break								
 
-				os.system("cp ./../output/plasmids/" + plasmid + "/gb_match/default/pk_results/" + plasmid + "-go.tsv ./plasmids/" + plasmid + "/merge/mergedgo.tsv")
+				os.system("cp ./../output/plasmids/" + plasmid + "/gb_match/default/pk_results/" + plasmid + "-go.tsv ./../output/plasmids/" + plasmid + "/merge/mergedgo.tsv")
 			else:				
 				gbk_dir="./../output/plasmids/" + plasmid + "/gb_match/" + str(row['Matches'])
-				os.system("mkdir " + gbk_dir)
-				out_dir=gbk_dir + "/pk_results"
-				os.system("mkdir " + out_dir)
 
-				#Run prokka
-				#os.system("CONDA_BASE=$(conda info --base)")
-				#os.system("source $CONDA_BASE/etc/profile.d/conda.sh")
-				#os.system("conda init")
-				#os.system("conda activate prokka_env")
-				#os.system("prokka --kingdom Bacteria --outdir " + out_dir + "  --prefix " + plasmid + " --force --proteins " + gbk_dir + ".gbk  ./../fastas/" + plasmid + ".fasta")
-				
-				#os.system("CONDA_BASE=$(conda info --base)")
-				#os.system("source $CONDA_BASE/etc/profile.d/conda.sh")
-				#os.system("conda deactivate prokka_env")
-				
-				#p2k="python prokka2kegg.py --input ./plasmids/" + plasmid + "/gb_match/" + str(row['Matches']) + "/pk_results/" + plasmid + ".gbk --output ./plasmids/" + plasmid + "/gb_match/" + str(row['Matches']) + "/prokka2go.txt"
-				#os.system(p2k)
-				try:
-					os.system("/bin/bash prokka.sh " + out_dir + " " + plasmid + " " + gbk_dir + " " + str(row['Matches']))
-				except:
-					print("Prokka not able to process given ID")
-					os.system("rm " + gbk_dir + "/pk_results/*")
-					os.system("rmdir " + gbk_dir + "/pk_results")
-					os.system("rm " + gbk_dir + ".gbk")
-					os.system(os.system("rmdir " + gbk_dir))
+				if not os.path.isfile(gbk_dir + "/pk_results/" + plasmid + "-go.tsv"):
+
+					os.system("mkdir " + gbk_dir)
+					out_dir=gbk_dir + "/pk_results"
+					os.system("mkdir " + out_dir)
+
+					#Run prokka
+					#os.system("CONDA_BASE=$(conda info --base)")
+					#os.system("source $CONDA_BASE/etc/profile.d/conda.sh")
+					#os.system("conda init")
+					#os.system("conda activate prokka_env")
+					#os.system("prokka --kingdom Bacteria --outdir " + out_dir + "  --prefix " + plasmid + " --force --proteins " + gbk_dir + ".gbk  ./../fastas/" + plasmid + ".fasta")
+					
+					#os.system("CONDA_BASE=$(conda info --base)")
+					#os.system("source $CONDA_BASE/etc/profile.d/conda.sh")
+					#os.system("conda deactivate prokka_env")
+					
+					#p2k="python prokka2kegg.py --input ./plasmids/" + plasmid + "/gb_match/" + str(row['Matches']) + "/pk_results/" + plasmid + ".gbk --output ./plasmids/" + plasmid + "/gb_match/" + str(row['Matches']) + "/prokka2go.txt"
+					#os.system(p2k)
+					try:
+						os.system("/bin/bash prokka.sh " + out_dir + " " + plasmid + " " + gbk_dir + " " + str(row['Matches']))
+					except:
+						print("Prokka not able to process given ID")
+						os.system("rm " + gbk_dir + "/pk_results/*")
+						os.system("rmdir " + gbk_dir + "/pk_results")
+						os.system("rm " + gbk_dir + ".gbk")
+						os.system(os.system("rmdir " + gbk_dir))
 
                         	#Only start comparing genes after reference accession ID has been processed by prokka
 				ref_dir="./../output/plasmids/" + plasmid + "/gb_match/default/pk_results"

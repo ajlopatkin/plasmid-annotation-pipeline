@@ -44,10 +44,11 @@ def get_GOID(plasmid, gene):
 	with open('./../output/plasmids/'+ plasmid + '/final.tsv') as tsv:
 		read=csv.reader(tsv, delimiter='\t')
 		for row in read:
-			if gene in row:
+			if gene in row[3] and len(gene)==len(row[3]):
 				if len(row[7])>0:
 					print("GO ID " + str(row[7]) + " for " + gene)
 					return str(row[7])
+		print("NOID for " + gene)
 		return "NOID"
 
 #If gene name is cut off, use the gene id to find the full gene name
@@ -68,6 +69,7 @@ def find_faa(id):
 #Load gene sequences for the genes in a given plasmid
 def load_genes(plasmid):
 	genes={}
+	print("Loading genes from " + plasmid)
 	with open("./../output/plasmids/" + plasmid + "/final.gbk") as gbk:
 		genefound=""
 		sequence=""
@@ -76,16 +78,14 @@ def load_genes(plasmid):
 		for line in gbk.readlines():
 			if "CDS" in line:
 				if len(genefound)>0:
-					print("TESTING")
-					print(genefound[0:genefound.index("|")])
-					genes[genefound[:genefound.index('|')]]=">"+ find_gene_id(plasmid, genefound[0:genefound.index("|")]) +"~~~" + genefound + "~~~" + "" + product + "\n" + sequence + "\n"
+					genes[genefound]=">"+ find_gene_id(plasmid, genefound[0:genefound.index("|")]) +"~~~" + genefound + "~~~" + "" + product + "\n" + sequence + "\n"
 				genefound=""
 				sequence=""
 				product=""
 				trans=False
 			if "ORIGIN" in line:
 				if len(genefound)>0:
-					genes[genefound[:genefound.index('|')]]=">"+ find_gene_id(plasmid, genefound[0:genefound.index("|")]) +"~~~" + genefound + "~~~" + "" + product + "\n" + sequence + "\n"
+					genes[genefound]=">"+ find_gene_id(plasmid, genefound[0:genefound.index("|")]) +"~~~" + genefound + "~~~" + "" + product + "\n" + sequence + "\n"
 				break
 			if "/product" in line:
 				start=line.index('"')+2
@@ -105,6 +105,7 @@ def load_genes(plasmid):
 					line=line[:line.index('"')]
 				sequence = str(sequence) + str(line.replace("\n", " ")).replace(" ", "")
 	print(genes)
+	print('\n')
 	return genes
 
 #Parse given acquisition cost data file for given plasmid
@@ -179,14 +180,23 @@ def parse_ann(plasmid):
 						num_atxn +=1
 					elif "toxin" in str(line[-1]).lower():
 						num_txn +=1
-					genes.append(str(line[3]))
+					if len(line[3])>0:
+						if len(line[7])>0:
+							genes.append("" + line[3] + "|" + line[7] + "")
+						else:
+							genes.append("" + line[3] + "|NOID")
+					else:
+						genes.append("")
 	except:
 		with open('./../output/plasmids/' + plasmid + '/final_KEGG.tsv') as anntsv:
 			read=csv.reader(anntsv, delimiter='\t')
 			for line in read:
 				if "locus_tag" not in line:
 					num_genes=num_genes+1
-					genes.append(str(line[3]))
+					if len(line[3])>0:
+						genes.append("" + line[3] + "|" + line[7] + "")
+					else:
+						genes.append("")
 	print("PLASMID " + plasmid + " has " + str(num_genes) + " total genes and " + str(num_ar) + " ar genes!")
 	genes.append([num_genes, num_ar, num_rep, num_con, num_met, num_str, num_txn, num_atxn])
 	return genes
@@ -268,23 +278,27 @@ def create_file(plasmids):
 
 		print("\nFINDING UNIQUE GENES")
 		for plas in plasmid_genes:
+			print("Plasmid: " + plas[0])
 			for gene in plas[1]:
 				print("Looking at gene: " + gene)
 
 				if gene not in seen and len(gene)>0:
-					result=all_genes[plas[0]][gene]
-					end=result.find('~~~')
-					id=result[1:end]
+					print(all_genes[plas[0]])
+					try:
+						result=all_genes[plas[0]][gene]
+						end=result.find('~~~')
+						id=result[1:end]
 
-					if id not in unique_ids:
-						unique_ids.append(id)
-						sequ_match=open("./../output/prtgene.faa", "a")
-						sequ_match.write(result)
-						sequ_match.close()
-					seen.append(gene)
-					all_ids.append(id)
-		print("\nUNIQUE IDS")
-		#print(unique_ids)
+						if id not in unique_ids:
+							unique_ids.append(id)
+							sequ_match=open("./../output/prtgene.faa", "a")
+							sequ_match.write(result)
+							sequ_match.close()
+						seen.append(gene)
+						all_ids.append(id)
+					except:
+						print("Given gene already seen or duplicate in the final annotation!")
+						
 		#Run PSI-CD-Hit at 30% homology to make sure all homologous genes have been found
 		os.system("./cd-hit/psi-cd-hit/psi-cd-hit.pl -i ./../output/prtgene.faa -o ./../output/psiresult.txt -c 0.3 -ce 1e-6")
 
@@ -306,11 +320,9 @@ def create_file(plasmids):
                                 	if index2==-1:
                                         	id1=line.find(">")+1
                                         	id2=line.find("~~~")
-                                        	print("ANALYSING THROUGH ID")
                                         	curr.append(find_faa(line[id1:id2]))
                                 	else:
                                         	index2=index2+index1
-                                        	print("AT " + str(index1) + " to " + str(index2) + " is " + str(line[index1:index2]))
                                         	curr.append(line[index1:index2])
 				if len(curr)==1:
 					hom_genes.append(curr[0])
