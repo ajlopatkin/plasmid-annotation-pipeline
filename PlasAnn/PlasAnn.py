@@ -119,6 +119,8 @@ def main(run_all):
 				plasmids.append(plasmid[0])
 
 		if int(blast_proc)==1:
+			os.system("mkdir ./../output/")
+			os.system("mkdir ./../output/plasmids/")
 			for plasmid in plasmids: 
 				os.system("/bin/bash blast.sh " + plasmid)
 

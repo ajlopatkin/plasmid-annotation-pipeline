@@ -54,20 +54,20 @@ def main(plasmid):
                     curr_rec = SeqRecord(seq = Seq(the_sequence), id = the_id, description = desc)
                     all_genes.append(curr_rec)
 
-    with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
-        lines = f.readlines()
-        x = lines
-        inc_group = x[0]
-        inc_group = str(inc_group)
-        inc_group = inc_group[0:4]
-
-        f.close()
-
-    for record in SeqIO.parse("./../backbone_genes/" + inc_group + "_backbone.fasta", "fasta"):
-        the_id = (record.id)
-        the_sequence = record.seq
-        new_rec = SeqRecord(seq = the_sequence, id = the_id)
-        all_genes.append(new_rec)
+   #  with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
+#         lines = f.readlines()
+#         x = lines
+#         inc_group = x[0]
+#         inc_group = str(inc_group)
+#         inc_group = inc_group[0:4]
+# 
+#         f.close()
+# 
+#     for record in SeqIO.parse("./../backbone_genes/" + inc_group + "_backbone.fasta", "fasta"):
+#         the_id = (record.id)
+#         the_sequence = record.seq
+#         new_rec = SeqRecord(seq = the_sequence, id = the_id)
+#         all_genes.append(new_rec)
 
     SeqIO.write(all_genes, "./../output/plasmids/"+plasmid+"/genbank_genes/labelled_genes.fasta", "fasta")
 
