@@ -148,11 +148,9 @@ def main(plasmid):
 
 	for final in final_res:
 		change=0
-		
-
 		for start in start_check:
 			if int(final[0][2])==int(start):
-				locus[str(start_check.index(int(final[0][2])))]=final
+				locus[str(start_check.index(int(final[0][2]))+1)]=final
 				break
 			else:
 				if change==0:
@@ -165,7 +163,6 @@ def main(plasmid):
 		with open("./../output/plasmids/" + plasmid + "/abricate_results.txt", "a") as new_f: 
 			new_f.write("\n"+ str(final))
 		new_f.close()
-
 
 	#write resistance genes into their corresponding positions in the final annotation
 
@@ -181,7 +178,7 @@ def main(plasmid):
 						finaline[3]=locus[str(currlocus)][0][5]
 						finaline[6]=locus[str(currlocus)][0][13]
 						finaline[7]=""
-						finaline[9]="Antibiotic Resistance"
+						finaline[9]="Antibiotic Resistance-" + finaline[9]
 						# print(finaline[3])
 						# print(finaline[6])
 						# print(finaline[7])
