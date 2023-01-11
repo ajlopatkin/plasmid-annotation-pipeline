@@ -14,7 +14,97 @@ from Bio.Blast.Applications import NcbiblastpCommandline
 from Bio.Blast import NCBIXML
 import pandas as pd
 
-def main(plasmid):
+#get gene and indicate what choosen gene name it should be replaced with
+def appendPlasmidDB(inc, choosen_gene, sequence, gene_info, consider):
+    fasta=open("./../ref_dbs/" + inc + ".fasta", 'a+')
+    
+    #process choosen gene in case it's an orf__ gene to just say orf
+    if (choosen_gene.lower()).startswith('orf'):
+        choosen_gene='orf'
+
+    #create record for each gene in consider (each gene close in apperance to choosen gene) to identify prefered naming for these genes
+    for gene in consider:
+        fasta_format=">" + gene + ":" + choosen_gene + "~~~" + gene_info[0] + "||" + gene_info[1] + "\n" + sequence + '\n'
+        fasta.write(fasta_format)
+    fasta.close()
+
+#return prefered gene name
+def findNaming(inc, gene):
+    new_name=''
+    if os.path.exists("./../ref_dbs/" + inc + ".fasta"):
+        fasta=open("./../ref_dbs/" + inc + ".fasta", 'r')
+    
+        #if gene naming found for given gene, obtain new gene name and information
+        for line in fasta:
+            if '>' in line:
+                if gene in line[line.index('>')+1:line.index(':')]:
+                    new_name=line[line.index(':')+1:line.index('~')]
+                    prod=line[line.index('~~~')+3:line.index('||')]
+                    inf=line[line.index('||')+2:line.index('\n')]
+                    return [new_name, [prod, inf]]
+    
+    #if no naing convention found for given gene, return empty result
+    result=[new_name]
+    return result
+
+#ask user to break ties; return user gene name choice
+def namingAsk(inc, consider, locus):
+    choosen_gene=consider[0]
+    print("\nSELECT GENE FOR " + locus + " (INC: " + inc + ")")
+    for i in range(0, len(consider)):
+        print("Option " + str(i+1) + ": " + str(consider[i]))
+
+    while True:
+        try:
+            option=int(input("\nPlease indicate which gene to use: "))
+            if option<1 or option>len(consider)+1:
+                print("Enter valid integer input corresponding to the gene option only!")
+            else:
+                choosen_gene=consider[option-1]
+                break
+        except:
+            print("Enter valid integer input only!")
+
+    return choosen_gene
+
+#NOT CURRENTLY BEING USED
+#Get gene sequence from labelled_genes.fasta for given gene
+def getGeneSequence(gene, other_genes, plasmid):
+    sequence=""
+    protein_id=""
+    product=""
+
+    sequence=[]
+    with open("./../output/plasmids/"+plasmid+"/genbank_genes/labelled_genes.fasta") as fasta:
+        write=0
+        for line in fasta:
+            if '>' in line:
+                if write==0 and gene.lower() in line.lower() and 'non-experimental' not in line:
+                    write=1
+                elif write==1:
+                    break
+            
+            if write==1:
+                sequence.append(line)
+    return sequence
+
+#def getPercentId(gene_file, plasmid):
+#    os.system("tblastn -query ./../fastas/" + plasmid + ".fasta -subject " + gene_file + " -out ./../output/plasmids/" + plasmid + "/temp_gene_file.csv -outfmt 10")
+
+#return inc group for current plasmid
+def getINC(plasmid):
+    with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
+	    lines = f.readlines()
+	    x = lines
+	    inc_group = x[0]
+	    inc_group = str(inc_group)
+	    inc = inc_group[0:4]
+	    f.close()
+    
+    return inc
+
+def main(plasmid, comb_run):
+    INC_GROUP=getINC(plasmid)
 
     newpath = "./../output/plasmids/"+plasmid+"/gb_match"
 
@@ -22,11 +112,24 @@ def main(plasmid):
         os.makedirs("./../output/plasmids/"+plasmid+"/genbank_genes")
     the_path = "./../output/plasmids/"+plasmid+"/genbank_genes/"
 
+    if not os.path.exists("./../ref_dbs"):
+        os.makedirs("./../ref_dbs")
 
+    accepted_match=[]
+    with open("./../output/plasmids/" + plasmid + "/matches.csv") as csvfile:
+        matchreader = csv.DictReader(csvfile, delimiter=' ', quotechar='|')
+        for match in matchreader:
+            if os.path.exists("./../output/plasmids/"+plasmid+"/gb_match/" + match['Matches']):
+                accepted_match.append(match['Matches'])
 
+    print(accepted_match)
     genbanks = glob("%s/*.gbk" % newpath)
     all_genes = []
     for file in genbanks:
+        #fileid=(file.split('/')[-1])[0:(file.split('/')[-1]).index('.')]
+        #if fileid not in accepted_match:
+        #    continue
+
         for i in SeqIO.parse(file, "gb"):
             print("We are parsing: " + i.id)
             s = (i.description)
@@ -118,18 +221,17 @@ def main(plasmid):
         both = {}
         hits = 0
         max_gene = ""
-        for blast_record in blast_records: 
+        for blast_record in blast_records:
 
             for alignment in blast_record.alignments: 
                 e_val = alignment.hsps[0].expect
                 pct_id =  alignment.hsps[0].identities/alignment.hsps[0].align_length*100
-
+                
                 the_desc = alignment.hit_def
                 gene_ind = the_desc.find("_")
                 prod_ind = the_desc.find(" ")
                 inf_ind = the_desc.find("|")
                 end_ind = len(the_desc)
-
                 
                 if e_val == 0 and pct_id == 100:
                     hits = hits + 1
@@ -197,13 +299,16 @@ def main(plasmid):
                 tsv_writer.writerow([locus_tag, max_gene, prod, inf])
 
         elif len(all_genes_found) == 1:
-            #print(all_genes_found)
-            #print(organism_info)
             max_gene = max(all_genes_found, key=all_genes_found.get)
-            # print(max_gene)
-            # print(gene_info)
             information = gene_info.get(max_gene)
-            #print(information)
+
+            #if comb_run==1, ask for user input and look at naming convention file
+            if int(comb_run)==1:
+                result=findNaming(INC_GROUP, max_gene)
+                if result[0] not in '':
+                    max_gene=result[0]
+                    information=result[1]
+
             prod = (information[0])
             inf = (information[1])
             with open("./../output/plasmids/"+plasmid+"/blast_genes.tsv", 'a') as out_file: 
@@ -219,11 +324,14 @@ def main(plasmid):
                     genes.append(key)
 
             max_org = max(organism_info, key=organism_info.get)
+            max_gene = max(all_genes_found, key=all_genes_found.get)
 
             the_best = {}
             if len(genes) > 1: 
                 # for each of our top genes
                 for x in genes: 
+                    total_rec=0
+                    total = 0
                     #temp label
                     y = str(x) 
                     #empty dictionary
@@ -231,11 +339,13 @@ def main(plasmid):
                     # both holds (gene, organism ) = number of times this occurs, 
                     for key in both: 
                         # if the gene we are looking at matches the key 
+                        val = both[key]
+                        total_rec+=val
                         if x == key[0]: 
-                            val = both[key]
                             y[key[1]] = val
+                            total+=val
 
-                    total = 0
+                    #total = 0
 
                     orgs = []
                     for key in y: 
@@ -250,39 +360,85 @@ def main(plasmid):
                         
                     ratio = popular/total
                     the_best[x] = ratio
-                
+
+                    #ratio=total/total_rec
+                    #the_best[x]=ratio
+            
+                #obtain max_gene, or most commonly seen gene at current locus
                 max_gene = max(the_best, key =the_best.get)
+                information = gene_info.get(max_gene)
+
+                #get list of genes that have a incidence rate that is within 0.2 of max gene
+                max_val=the_best[max_gene]
+                consider=[max_gene]
+                for gene in the_best:
+                    if gene!=max_gene:
+                        if the_best[gene]==max_val or abs(max_val-the_best[gene])<=0.2:
+                            consider.append(gene)
+
+                #process consider genes to determine if different naming should be used
+                if len(consider)>1:
+                    #if comb_run==1, ask for user input and look at naming convention file
+                    if int(comb_run)==1:
+                        result=findNaming(INC_GROUP, max_gene)
+
+                        if result[0] in '':
+                            max_gene=namingAsk(INC_GROUP, consider, locus_tag)
+                            appendPlasmidDB(INC_GROUP, max_gene, seq, gene_info.get(max_gene), consider)
+                            information = gene_info.get(max_gene)
+                        else:
+                            max_gene=result[0]
+                            information=result[1]
+                else:
+                    #if comb_run==1, ask for user input and look at naming convention file
+                    if int(comb_run)==1:
+                        result=findNaming(INC_GROUP, max_gene)
+
+                        if result[0] not in '':
+                            max_gene=result[0]
+                            information=result[1]
+                            
+                prod = (information[0])
+                inf = (information[1])
+                with open("./../output/plasmids/"+plasmid+"/blast_genes.tsv", 'a') as out_file: 
+                    tsv_writer = csv.writer(out_file, delimiter = '\t')
+                    tsv_writer.writerow([locus_tag, max_gene, prod, inf])
+                        
+
+                    #os.system("mkdir ./../output/plasmids/" + plasmid + "/temp")
+                    #for gene in consider:
+                    #    fasta_sequ=getGeneSequence(gene, consider, plasmid)
+
+                    #    f=open("./../output/plasmids/" + plasmid + "/temp/" + plasmid + "_" + gene + "_" + locus_tag + ".fasta", 'w')
+                    #    for line in fasta_sequ:
+                    #        f.write(line)
+                    #    f.close()
+
+                #pct_ids=[]
+                #for gene in consider:
+                #    pct_ids.append(getPercentId("./../output/plasmids/" + plasmid + "/temp/" + plasmid + "_" + gene + "_" + locus_tag + ".fasta", plasmid))
+                
+
+                #max_gene=max(genes, key=genes.get)
 
             elif len(genes) == 1: 
                 max_gene = genes[0]
-                #print(max_gene)
-                #print(y)
-            #print(the_best)
-            #print(all_genes_found)
-            #print(organism_info)
-            #max_gene = max(the_best, key =the_best.get)
+                information = gene_info.get(max_gene)
+                
+                if int(comb_run)==1:
+                    result=findNaming(INC_GROUP, max_gene)
+
+                    if result[0] not in '':
+                        max_gene=result[0]
+                        information=result[1]
 
 
-            #max_gene = max_gene[0]
-            #new_key = (max_gene, max_org)
-            #print(all_genes_found[new_key])
-            # if len(max_gene) > 0: 
-            # print(max_gene)
-             #print(gene_info)
-            information = gene_info.get(max_gene)
-                # print(information)
-             #print(information)
-            prod = (information[0])
-                # #print(prod)
-            inf = (information[1])
-            # else: 
-            #     max_gene = ""
-            #     inf = ""
-            #     prod  = ""
+                prod = (information[0])
+                inf = (information[1])
 
-            with open("./../output/plasmids/"+plasmid+"/blast_genes.tsv", 'a') as out_file: 
-                tsv_writer = csv.writer(out_file, delimiter = '\t')
-                tsv_writer.writerow([locus_tag, max_gene, prod, inf])
+                with open("./../output/plasmids/"+plasmid+"/blast_genes.tsv", 'a') as out_file: 
+                    tsv_writer = csv.writer(out_file, delimiter = '\t')
+                    tsv_writer.writerow([locus_tag, max_gene, prod, inf])
 
         else: 
             max_gene = ""
@@ -293,6 +449,7 @@ def main(plasmid):
                 tsv_writer = csv.writer(out_file, delimiter = '\t')
                 tsv_writer.writerow([locus_tag, max_gene, prod, inf])
 
+    #add gene data to tsv and gbk files
     b_data = pd.read_table("./../output/plasmids/"+plasmid+"/blast_genes.tsv")
     locuses = b_data['locus_tag'].values.tolist()
     genes = b_data['gene'].values.tolist()
@@ -305,9 +462,6 @@ def main(plasmid):
 
     final_data = pd.read_table("./../output/plasmids/"+plasmid+"/gb_match/default/pk_results/"+plasmid+".tsv")
     final_locuses = final_data['locus_tag'].values.tolist()
-    # print("The original")
-    # print(final_data.to_string())
-
 
     final_features = []
     outfile = "./../output/plasmids/"+plasmid+"/the_final.gbk"
@@ -327,7 +481,6 @@ def main(plasmid):
                         newinf = inference[ind]
 
                         fin_ind = final_locuses.index(locus)
-                        #print(fin_ind)
                         final_data.loc[fin_ind,'gene']=newgene
                         # final_data.insert(fin_ind,'gene', newgene)
                         # final_data.insert(fin_ind,'EC_number', '')
@@ -346,20 +499,22 @@ def main(plasmid):
                     new_qual['gene'] = [f'{newgene}']
                     new_qual['product'] = [f'{newprod}']
                     new_qual['inference'] = [f'{newinf}']
-
-
-                    #print(new_qual)
                     feature.qualifiers = new_qual
+
             final_features.append(feature)
         record.features = final_features
         with open(outfile, "w") as new_gb:
             SeqIO.write(record, new_gb, "genbank")
 
         final_data.to_csv("./../output/plasmids/" + plasmid + "/the_final.tsv", sep="\t",  index=False)
-    
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('plasmid', type=str)
-    plasname=(parser.parse_args()).plasmid
-    main(plasname)
+    parser.add_argument('-p', metavar='plasmid', dest='p',
+                        type=str, required=True)
+    parser.add_argument('-c', metavar='comb_run', dest='c',
+                        type=str, required=True)
+
+    args = parser.parse_args()
+    main(args.p, args.c)
 
