@@ -71,6 +71,25 @@ def main(run_all):
 				except:
 					print("Enter valid string input only!")
 
+		comb_run=-1
+		print("\nPlease choose gene naming option")
+		print("Option 1: Utilize naming convention fasta files + ask to break tie breakers")
+		print("Option 2: PlasAnn breaks tie breakers for you (no asking, no naming convention)")
+		print("Type STOP to STOP PROGRAM")
+		while True:
+			try:
+				comb_run=int(input("Type your answer: "))
+				if int(comb_run)!=1 and int(comb_run)!=2:
+						print("\nPlease type valid binary number!")
+				else:
+					break
+			except:
+				if str(comb_run) in "STOP" or str(comb_run) in "^C":
+					print("STOP DETECTED: EXITING PROGRAM")
+					sys.exit()
+				else:
+					print("\nPlease type valid binary number!")
+		
 
 		print("\n=== PLAS ANN ===")
 		cwd = os.getcwd()
@@ -82,13 +101,12 @@ def main(run_all):
 				print("---------------------------------------------------")
 				print("Re-annotating " + plasmid)
 				print("---------------------------------------------------")
-				os.system("/bin/bash bgbm.sh " + plasmid)
+				os.system("/bin/bash bgbm.sh " + plasmid + " " + str(comb_run))
 			elif not exists:
 				print("---------------------------------------------------")
-				print("Annotating Plasmid " + plasmid)
+				print("Annotating Plasmid " + plasmid + " " + str(comb_run))
 				print("---------------------------------------------------")
-				os.system("/bin/bash bgbm.sh " + plasmid)
-				#os.system("/bin/bash bgbm.sh " + plasmid)
+				os.system("/bin/bash bgbm.sh " + plasmid + " " + str(comb_run))
 			else:
 				print("---------------------------------------------------")
 				print("Plasmid " + plasmid + " has already been annotated!")
@@ -112,6 +130,27 @@ def main(run_all):
 					sys.exit()
 				else:
 					print("\nPlease type valid binary number!")
+		
+		comb_run=-1
+		if run_all==2 or run_all==0:
+			print("\nPlease choose gene naming option")
+			print("Option 1: Utilize naming convention fasta files + ask to break tie breakers")
+			print("Option 2: PlasAnn breaks tie breakers for you (no asking, no naming convention)")
+			print("Type STOP to STOP PROGRAM")
+			while True:
+				try:
+					comb_run=int(input("Type your answer: "))
+					if int(comb_run)!=1 and int(comb_run)!=2:
+						print("\nPlease type valid binary number!")
+					else:
+						break
+				except:
+					if str(comb_run) in "STOP" or str(comb_run) in "^C":
+						print("STOP DETECTED: EXITING PROGRAM")
+						sys.exit()
+					else:
+						print("\nPlease type valid binary number!")
+
 		plasmids=[]
 		with open("./../fasta.csv", 'r') as csvfile:
 			read=csv.reader(csvfile, delimiter='\t')
@@ -122,7 +161,7 @@ def main(run_all):
 			os.system("mkdir ./../output/")
 			os.system("mkdir ./../output/plasmids/")
 			for plasmid in plasmids: 
-				os.system("/bin/bash blast.sh " + plasmid)
+				os.system("/bin/bash blast.sh " + plasmid + " " + str(comb_run))
 
 	else: 
 		print("\nLINEAR REGRESSION RUNNING")
