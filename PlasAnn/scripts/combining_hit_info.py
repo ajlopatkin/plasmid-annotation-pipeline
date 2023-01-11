@@ -88,9 +88,6 @@ def getGeneSequence(gene, other_genes, plasmid):
                 sequence.append(line)
     return sequence
 
-#def getPercentId(gene_file, plasmid):
-#    os.system("tblastn -query ./../fastas/" + plasmid + ".fasta -subject " + gene_file + " -out ./../output/plasmids/" + plasmid + "/temp_gene_file.csv -outfmt 10")
-
 #return inc group for current plasmid
 def getINC(plasmid):
     with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
@@ -241,7 +238,6 @@ def main(plasmid, comb_run):
                     if "backbone" in the_gene: 
                         the_gene = the_gene.replace("_backbone", "")
                         max_gene = the_gene
-                        #print(max_gene)
                         break 
                     if "_" in the_gene:
                         ind = the_gene.index("_")
@@ -403,23 +399,6 @@ def main(plasmid, comb_run):
                 with open("./../output/plasmids/"+plasmid+"/blast_genes.tsv", 'a') as out_file: 
                     tsv_writer = csv.writer(out_file, delimiter = '\t')
                     tsv_writer.writerow([locus_tag, max_gene, prod, inf])
-                        
-
-                    #os.system("mkdir ./../output/plasmids/" + plasmid + "/temp")
-                    #for gene in consider:
-                    #    fasta_sequ=getGeneSequence(gene, consider, plasmid)
-
-                    #    f=open("./../output/plasmids/" + plasmid + "/temp/" + plasmid + "_" + gene + "_" + locus_tag + ".fasta", 'w')
-                    #    for line in fasta_sequ:
-                    #        f.write(line)
-                    #    f.close()
-
-                #pct_ids=[]
-                #for gene in consider:
-                #    pct_ids.append(getPercentId("./../output/plasmids/" + plasmid + "/temp/" + plasmid + "_" + gene + "_" + locus_tag + ".fasta", plasmid))
-                
-
-                #max_gene=max(genes, key=genes.get)
 
             elif len(genes) == 1: 
                 max_gene = genes[0]
