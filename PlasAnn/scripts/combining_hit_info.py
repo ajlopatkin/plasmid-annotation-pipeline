@@ -37,7 +37,7 @@ def findNaming(inc, gene):
         #if gene naming found for given gene, obtain new gene name and information
         for line in fasta:
             if '>' in line:
-                if gene in line[line.index('>')+1:line.index(':')]:
+                if gene in line[line.index('>')+1:line.index(':')] and len(line[line.index('>')+1:line.index(':')])==len(gene):
                     new_name=line[line.index(':')+1:line.index('~')]
                     prod=line[line.index('~~~')+3:line.index('||')]
                     inf=line[line.index('||')+2:line.index('\n')]
@@ -47,12 +47,25 @@ def findNaming(inc, gene):
     result=[new_name]
     return result
 
+#returns TRUE if all the genes to be considered are orf sequences
+def isORF(consider):
+    orf=True
+    for gene in consider:
+        if "orf" not in gene and "pIP69" not in gene and "urf" not in gene:
+            orf=False
+            break
+    
+    return orf
+
+
 #ask user to break ties; return user gene name choice
-def namingAsk(inc, consider, locus):
+def namingAsk(inc, consider, locus, blast_info):
     choosen_gene=consider[0]
     print("\nSELECT GENE FOR " + locus + " (INC: " + inc + ")")
     for i in range(0, len(consider)):
-        print("Option " + str(i+1) + ": " + str(consider[i]))
+        #(pct_cvg, blast_score, e_val, pct_id)
+        gene_info=blast_info[consider[i]]
+        print("Option " + str(i+1) + ": " + str(consider[i]) + " (E_VAL: " + str(gene_info[2]) + ", BLAST_SCORE: " + str(gene_info[1]) +  ", PERCENT COVERAGE: " + str(gene_info[0]) + ")")
 
     while True:
         try:
@@ -127,32 +140,41 @@ def main(plasmid, comb_run):
         #if fileid not in accepted_match:
         #    continue
 
+
+        #look at file header nad change if the bp is not numerical
+        #
+
         for i in SeqIO.parse(file, "gb"):
+            
             print("We are parsing: " + i.id)
-            s = (i.description)
-            organism = (" ".join(s.split()[:2]))
-            for f in i.features:
-                if (f.type == "CDS" and ("gene" in f.qualifiers)):
-                    gene = f.qualifiers.get("gene", [])
-                    gene = gene[0]
-                    product = ""
-                    inf = ""
+            try:
+                s = (i.description)
+                organism = (" ".join(s.split()[:2]))
+                for f in i.features:
+                    if (f.type == "CDS" and ("gene" in f.qualifiers)):
+                        gene = f.qualifiers.get("gene", [])
+                        gene = gene[0]
+                        product = ""
+                        inf = ""
 
-                    if "product" in f.qualifiers: 
-                        product = f.qualifiers.get("product", [])
-                        product = product[0]
+                        if "product" in f.qualifiers: 
+                            product = f.qualifiers.get("product", [])
+                            product = product[0]
 
-                    if "inference" in f.qualifiers: 
-                        inf = f.qualifiers.get("inference", [])
-                        inf = inf[0]
+                        if "inference" in f.qualifiers: 
+                            inf = f.qualifiers.get("inference", [])
+                            inf = inf[0]
 
-                    the_id = str(i.id + "_" + gene +  " " + organism )
-                    desc = product + "|" + inf 
-                    the_sequence = str(f.qualifiers.get("translation", []))
-                    the_sequence = (the_sequence.strip("[']"))
+                        the_id = str(i.id + "_" + gene +  " " + organism )
+                        desc = product + "|" + inf 
+                        the_sequence = str(f.qualifiers.get("translation", []))
+                        the_sequence = (the_sequence.strip("[']"))
 
-                    curr_rec = SeqRecord(seq = Seq(the_sequence), id = the_id, description = desc)
-                    all_genes.append(curr_rec)
+                        curr_rec = SeqRecord(seq = Seq(the_sequence), id = the_id, description = desc)
+                        all_genes.append(curr_rec)
+            except:
+                print("\nError parsing " + i.id)
+                continue
 
    #  with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
 #         lines = f.readlines()
@@ -178,16 +200,20 @@ def main(plasmid, comb_run):
         tsv_writer = csv.writer(out_file, delimiter='\t')
         tsv_writer.writerow(['locus_tag', 'gene', 'product', 'inference'])
 
-    our_file = "./../output/plasmids/"+plasmid+"/gb_match/default/pk_results/"+plasmid+".gbk"
-    our_genes = []
-    for i in SeqIO.parse(our_file, "gb"):
-        for f in i.features:
-                if (f.type == "CDS" and ("locus_tag" in f.qualifiers)):
-                    locus_tag = str(f.qualifiers["locus_tag"][0])
-                    the_sequence = str(f.qualifiers.get("translation", []))
-                    the_sequence = (the_sequence.strip("[']"))
-                    curr_rec = SeqRecord(seq = Seq(the_sequence), id = locus_tag)
-                    our_genes.append(curr_rec)
+    with open("./../output/plasmids/"+plasmid+"/gb_match/default/pk_results/"+plasmid+".gbk") as our_file:
+        our_genes = []
+        for i in SeqIO.parse(our_file, "gb"):
+            try:
+                for f in i.features:
+                        if (f.type == "CDS" and ("locus_tag" in f.qualifiers)):
+                            locus_tag = str(f.qualifiers["locus_tag"][0])
+                            the_sequence = str(f.qualifiers.get("translation", []))
+                            the_sequence = (the_sequence.strip("[']"))
+                            curr_rec = SeqRecord(seq = Seq(the_sequence), id = locus_tag)
+                            our_genes.append(curr_rec)
+            except:
+                print("ERROR: Unable to process feature")
+                continue
     SeqIO.write(our_genes, "./../output/plasmids/"+plasmid+"/our_genes.fasta", "fasta")
 
     for rec in SeqIO.parse("./../output/plasmids/"+plasmid+"/our_genes.fasta", "fasta"):
@@ -216,6 +242,7 @@ def main(plasmid, comb_run):
         gene_info = {}
         organism_info = {}
         both = {}
+        blast_info={}
         hits = 0
         max_gene = ""
         for blast_record in blast_records:
@@ -223,6 +250,10 @@ def main(plasmid, comb_run):
             for alignment in blast_record.alignments: 
                 e_val = alignment.hsps[0].expect
                 pct_id =  alignment.hsps[0].identities/alignment.hsps[0].align_length*100
+                pct_cvg= (alignment.hsps[0].align_length/len(alignment.hsps[0].query))*100
+                blast_score=alignment.hsps[0].score
+                #print(alignment.hsps[0].query)
+                #print(len(alignment.hsps[0].query))
                 
                 the_desc = alignment.hit_def
                 gene_ind = the_desc.find("_")
@@ -252,6 +283,8 @@ def main(plasmid, comb_run):
                     all_genes_found[the_gene] = all_genes_found.get(the_gene,0) + 1
                     organism_info[org] = organism_info.get(org,0) + 1
                     both[gene_org] = both.get(gene_org,0) + 1
+                    blast_info[the_gene]=(pct_cvg, blast_score, e_val, pct_id)
+                    #print(blast_info[the_gene])
 
                 elif e_val < 1e-3 and pct_id > 99:
 
@@ -283,7 +316,8 @@ def main(plasmid, comb_run):
                     all_genes_found[the_gene] = all_genes_found.get(the_gene,0) + 1
                     organism_info[org] = organism_info.get(org,0) + 1
                     both[gene_org] = both.get(gene_org,0) + 1
-                    #print(both)
+                    blast_info[the_gene]=(pct_cvg, blast_score, e_val, pct_id)
+                    #print(blast_info[the_gene])
 
         # Now we have 4 dictionaries: 
         # all_genes_found, gene_info, organism_info, both 
@@ -297,6 +331,10 @@ def main(plasmid, comb_run):
         elif len(all_genes_found) == 1:
             max_gene = max(all_genes_found, key=all_genes_found.get)
             information = gene_info.get(max_gene)
+
+            #if max_gene is an orf gene, change name so it says 'orf' only
+            if ((max_gene.startswith('orf') or max_gene.startswith('urf')) and str(max_gene[3:-1]).isnumeric()) or "pIP69" in max_gene:
+                appendPlasmidDB(INC_GROUP, 'orf', seq, gene_info.get(max_gene), [max_gene])
 
             #if comb_run==1, ask for user input and look at naming convention file
             if int(comb_run)==1:
@@ -369,9 +407,13 @@ def main(plasmid, comb_run):
                 consider=[max_gene]
                 for gene in the_best:
                     if gene!=max_gene:
-                        if the_best[gene]==max_val or abs(max_val-the_best[gene])<=0.2:
+                        if the_best[gene]==max_val or abs(max_val-the_best[gene])<=1:
                             consider.append(gene)
 
+                #process consider so orf sequences are added to naming convention and named 'orf'   
+                if isORF(consider):
+                    appendPlasmidDB(INC_GROUP, 'orf', seq, gene_info.get(max_gene), consider)
+                    
                 #process consider genes to determine if different naming should be used
                 if len(consider)>1:
                     #if comb_run==1, ask for user input and look at naming convention file
@@ -379,9 +421,13 @@ def main(plasmid, comb_run):
                         result=findNaming(INC_GROUP, max_gene)
 
                         if result[0] in '':
-                            max_gene=namingAsk(INC_GROUP, consider, locus_tag)
-                            appendPlasmidDB(INC_GROUP, max_gene, seq, gene_info.get(max_gene), consider)
+                            max_gene=namingAsk(INC_GROUP, consider, locus_tag, blast_info)
                             information = gene_info.get(max_gene)
+                            if ((max_gene.startswith('orf') or max_gene.startswith('urf')) and str(max_gene[3:-1]).isnumeric()) or "pIP69" in max_gene:
+                                appendPlasmidDB(INC_GROUP, 'orf', seq, gene_info.get(max_gene), consider)
+                                max_gene='orf'
+                            else:
+                                appendPlasmidDB(INC_GROUP, max_gene, seq, gene_info.get(max_gene), consider)
                         else:
                             max_gene=result[0]
                             information=result[1]
