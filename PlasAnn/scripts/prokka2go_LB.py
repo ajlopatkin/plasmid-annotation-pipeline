@@ -63,84 +63,6 @@ for go_item in godag.values():
 		val_items.append(go_item)
 		val_ids.append(go_item.id)
 
-
-#Call PSI-BLAST if gene is left w/no functional description
-def psi_blast(gene, plasmid):
-    
-	sequence=""
-	
-	with open("./../output/plasmids/" + plasmid + "/the_final.gbk", "r") as proteins:
-		cds=0
-		locus=0
-		found=0
-		read=0
-		prod=0
-
-		for line in proteins.readlines():
-			if line.startswith(' ' * 5 + 'CDS'):
-				cds=1
-				found=0
-			if line.startswith(' ' * 21 + '/locus_tag=') and cds==1:
-				locus=1
-			if line.startswith(' ' * 21 + '/gene=') and cds == 1:
-				nmindex=line.find('=')
-				if gene.lower() in line[nmindex+2:-2].lower():
-					found=1
-					print("GENE FOUND")
-				else:
-					cds=0
-					locus=0
-			if found==1 and line.startswith(' ' * 21 + '/protein_id='):
-				prtindex=line.find('=')
-				protein_id=line[prtindex+2:-2]
-			if found==1 and line.startswith(' ' * 21 + "sequence") and len(protein_id)==0:
-				protein_id=(line.split(':'))[-1][0:-2]
-				print(protein_id)
-			if line.startswith(' ' * 21 + '/translation='):
-				read=1
-				prod=0
-			if found==1 and read==1 and prod!=1:
-				nmindex=line.find('=')
-				trans=line[nmindex+2:-2]
-				if (not (line.startswith(' ' * 21 + '/')) or line.startswith(' ' * 21 + '/translation=')) and not line.startswith(' ' * 21 + 'sequence') and not line.startswith('ORIGIN'):
-					print("HERE")
-					print(sequence)
-					sequence = sequence + (trans.replace("\n", " ")).replace(" ", "")
-					print(sequence)
-				elif line.startswith(' ' * 5 + 'CDS') or line.startswith(' ' * 5 + 'gene'):
-					print("RESET")
-					cds=0
-					if line.startswith(' ' * 5 + 'CDS'):
-						cds=1
-					read=0
-					found=0
-					locus=0
-				elif line.startswith('ORIGIN'):
-					break
-			if found==1 and (line.startswith(' ' * 21 + "/product") or prod==1):
-				prdcti=line.find('=')
-				product=line[prdcti+2:-2].replace("\n", "")
-				prod=1
-				read=0
-				print("ADDED TO PRODUCT")
-				print(product)
-			if len(sequence)>0:
-				break
-			if len(product)==0:
-				product=gene
-			else:
-				print("PRODUCT PROCESSING")
-				print(product)
-				product=product.replace("\n", "")				
-
-	if len(sequence)>0:
-		job_id=os.system("python -c " + "'" + "from psiblast import *; print(psiblast.serviceRun(" + "'" + "jc4919@barnard.edu" + "'" + ", " + "'" + gene + "'" + ", [ " + "'" + "sequence:" + "'" "'" + sequence + "'" + "]" + ", " + "'" + "U" "))" + "'")
-		print("JOB ID " + str(job_id))		
-		#job_id=serviceRun("jc4919@barnard.edu", "", [""+ sequence +""])
-		#print(job_id)	
-		#print(requests.get("https://www.ebi.ac.uk/Tools/services/rest/psiblast/resulttypes/" + job_id))
-		#print(results)
-
 #Process go_id function descriptions based on parent descriptions to make labeling easier when mapping 
 def process_go_id(go_id, func_desc, general):
 	keywords=['conjugation', 'replication', 'pilus', 'plasmid', 'stress', 'antitoxin', 'toxin', 'damage stimulus', 'metabolism', 'metabolic']
@@ -160,7 +82,7 @@ def process_go_id(go_id, func_desc, general):
 		found=0
 		for word in keywords:
 			if word in general:
-				return func_desc + "-" + word
+				return func_desc + " " + word
 
 		addition=""
 		#USE PARENT ID'S TO EDIT FUNC DESC
@@ -173,13 +95,13 @@ def process_go_id(go_id, func_desc, general):
 		#				addition=word
 		#				if word in keywords[0:-2]:
 		#					break
-		return func_desc + "-" + addition
+		return func_desc + " " + addition
 	
 #Get GO ID for each uniprot id found by calling on UNIPROT 
 #Print statements commented out; uncomment for debugging if needed!
 def get_go_id(upro_ids):
-	print("GET GO ID's FOR GIVEN PLASMID")
-	print(upro_ids)
+	#print("GET GO ID's FOR GIVEN PLASMID")
+	#print(upro_ids)
 	interest=['conjugation', 'replication', 'pilus', 'plasmid', 'stress', 'antitoxin', 'toxin', 'damage stimulus', 'metabolism', 'metabolic']
 
 
@@ -272,83 +194,122 @@ def get_go_id(upro_ids):
 								rev_stat="U"
 								if 'R' in find:
 									rev_stat="R"
-								poss_ids.append([uid[0], "", rev_stat, key])
+								go_ids.append([[uid[0], "", rev_stat, key]])
 								break
 						if keyfind==0:
-							poss_ids.append([uid[0], "", "", ""])
+							go_ids.append([[uid[0], "", "", ""]])
 					else:
-						poss_ids.append([uid[0], "", "", ""])
+						go_ids.append([[uid[0], "", "", ""]])
+					
 				else:
-					match_go=[]
+					#print('uid_gos')
+					#print(uid_gos)
+					curr_matches=[]
+					curr_locus=""
 					for go_found in uid_gos:
-						if len(match_go)==0:
-							match_go=go_found
+						if curr_locus in "":
+							curr_match=[go_found]
+							curr_locus=go_found[0]
 						else:
-							if 'P' not in match_go[2] and 'P' in go_found[2]:
-								match_go=go_found
-								continue
-							elif 'P' in match_go[2] and 'P' in go_found[2]:
-								key_find=0
-								for key in interest:
-									if key in match_go[2]:
-										key_find=1
-										break
-									if key in go_found[1]:
-										key_find=2
+							if go_found[0] in curr_locus:
+								curr_matches.append(go_found)
+							else:
+								go_ids.append(curr_matches)
+								curr_matches=[go_found]
+								curr_locus=go_found[0]
+							
+							if uid_gos.index(go_found)==len(uid_gos)-1:
+								go_ids.append(curr_matches)
+					
 
-								if key_find==2:
-									match_go=go_found
-					poss_ids.append(match_go)
+		# 		if found==0:
+		# 			if len(keywords)>0:
+		# 				#print("KEYWORDS ANALYSIS")
+		# 				keyfind=0
+		# 				interest=['conjugation', 'replication', 'pilus', 'plasmid', 'stress', 'toxin', 'damage stimulus', 'metabolism', 'metabolic']
+		# 				for key in interest:
+		# 					if key in keywords:
+		# 						keyfind=1
+		# 						rev_stat="U"
+		# 						if 'R' in find:
+		# 							rev_stat="R"
+		# 						poss_ids.append([uid[0], "", rev_stat, key])
+		# 						break
+		# 				if keyfind==0:
+		# 					poss_ids.append([uid[0], "", "", ""])
+		# 			else:
+		# 				poss_ids.append([uid[0], "", "", ""])
+		# 		else:
+		# 			match_go=[]
+		# 			for go_found in uid_gos:
+		# 				if len(match_go)==0:
+		# 					match_go=go_found
+		# 				else:
+		# 					if 'P' not in match_go[2] and 'P' in go_found[2]:
+		# 						match_go=go_found
+		# 						continue
+		# 					elif 'P' in match_go[2] and 'P' in go_found[2]:
+		# 						key_find=0
+		# 						for key in interest:
+		# 							if key in match_go[2]:
+		# 								key_find=1
+		# 								break
+		# 							if key in go_found[1]:
+		# 								key_find=2
 
-			#for go_id in poss_ids:
-			#	if find in go_id[2]:
-			#			go_ids.append(go_id)
-			#			break
+		# 						if key_find==2:
+		# 							match_go=go_found
+		# 			poss_ids.append(match_go)
 
-			concensus=[]
-			for go_find in poss_ids:
-				print("GO FIND")
-				print(go_find)
-				if len(concensus)==0:
-					if len(go_find[1])>0:
-						temp=go_find
-						temp.append(1)
-						concensus.append(temp)
-					else:
-						continue
-				else:
-					if len(go_find)>0:
-						found=0
-						for final_go in concensus:
-							print(go_find)
-							print(final_go)
-							if go_find[1] in final_go[1]:
-								found=1
-								final_go[-1]+=1
-								break
-						if found!=1:
-							temp=go_find
-							temp.append(1)
-							concensus.append(temp)
+		# 	#for go_id in poss_ids:
+		# 	#	if find in go_id[2]:
+		# 	#			go_ids.append(go_id)
+		# 	#			break
 
-			go_app=[]
-			for id in concensus:
-				if len(go_app)==0:
-					go_app=id
-				else:
-					if id[-1]>go_app[-1]:
-						go_app=id
-			print("GO APP")
-			print(go_app)
-			if len(go_app)>0:
-				go_ids.append(go_app[0:len(go_app)-1])
-			else:
-				print("EMPTY GO APP")
-				go_ids.append([uid[0], "", "", ""])
+		# 	concensus=[]
+		# 	for go_find in poss_ids:
+		# 		print("GO FIND")
+		# 		print(go_find)
+		# 		if len(concensus)==0:
+		# 			if len(go_find[1])>0:
+		# 				temp=go_find
+		# 				temp.append(1)
+		# 				concensus.append(temp)
+		# 			else:
+		# 				continue
+		# 		else:
+		# 			if len(go_find)>0:
+		# 				found=0
+		# 				for final_go in concensus:
+		# 					print(go_find)
+		# 					print(final_go)
+		# 					if go_find[1] in final_go[1]:
+		# 						found=1
+		# 						final_go[-1]+=1
+		# 						break
+		# 				if found!=1:
+		# 					temp=go_find
+		# 					temp.append(1)
+		# 					concensus.append(temp)
+
+		# 	go_app=[]
+		# 	for id in concensus:
+		# 		if len(go_app)==0:
+		# 			go_app=id
+		# 		else:
+		# 			if id[-1]>go_app[-1]:
+		# 				go_app=id
+		# 	print("GO APP")
+		# 	print(go_app)
+		# 	if len(go_app)>0:
+		# 		go_ids.append(go_app[0:len(go_app)-1])
+		# 	else:
+		# 		print("EMPTY GO APP")
+		# 		go_ids.append([uid[0], "", "", ""])
 								
-		else:
-			print("NO GO ID B/C NO UNIPROT ID MATCH FOR " + uid[0])
-			go_ids.append([uid[0], "", "", ""])
+		# else:
+		# 	print("NO GO ID B/C NO UNIPROT ID MATCH FOR " + uid[0])
+		# 	go_ids.append([uid[0], "", "", ""])
 	
 	#print(go_ids)
 	print("PROCESSED GO ID's FOR GIVEN PLASMID")			
@@ -429,7 +390,7 @@ def gbk_parser(gbk):
 				#      rmv=gene.find('-')
 				#      gene=gene[0:rmv]
 
-				print("CURR GENE: " + gene)
+				#print("CURR GENE: " + gene)
 				#Call on uniprot to return list of matching uniprot id's for given gene
 				uni_http=requests.get("https://www.uniprot.org/uniprot/?query=gene:" + gene + "+AND+taxonomy:2&taxanomy=2&active=yes&limit=20&format=tab&columns=id,reviewed,genes(PREFERRED),lineage(ALL)")
 				uni_http.encoding="ISO-8859-1"
@@ -487,19 +448,45 @@ def gbk_parser(gbk):
 	return arr
 
 def output(arr, outfile):
-	#print("OUTFILE")
+	print("OUTFILE")
 	#print(outfile)
 	#print(arr)
 	with open(outfile, 'w') as fo:
-		fo.write("locus_tag" + "\t" + "GO ID" + "\t" + "Type" + "\t" + "Function" + "\n")
+		fo.write("locus_tag" + "\t" + "GO_ID_P"  + "\t" + "GO_ID_C" + "\t" + "GO_ID_F" + "\t" + "Function" + "\n")
 		for cds in arr:
-			print(cds)
-			if len(cds)>2:
-				print("WRITING MATCH")
-				fo.write(cds[0] + "\t" + cds[1] + "\t" + cds[2] + "\t" + cds[3] + "\n")
-			else:
-				print("WRITING BLANK")
-				fo.write(cds[0] + "\t" + "" + "\t" + "" + "\t" + "" + "\n")
+			locus_tag=""
+			go_ids_P=""
+			go_ids_C=""
+			go_ids_F=""
+			function=""
+			for goid in cds:
+				#print("GOID: " + goid[1])
+				if len(goid[1].replace(" ", ""))>0:
+					#print("GOID")
+					#print(goid)
+					if len(locus_tag)==0:
+						locus_tag=goid[0]
+					if "P" in goid[2]:
+						go_ids_P=go_ids_P+goid[1]+"|"
+					elif "C" in goid[2]:
+						go_ids_C=go_ids_C+goid[1]+"|"
+					elif "F" in goid[2]:
+						go_ids_F=go_ids_F+goid[1]+"|"
+				
+					if len(goid[3].replace(" ", ""))>0:
+						if len(function)==0:
+							function=goid[3]
+						else:
+							function=' | ' + function + goid[3]
+			#print(locus_tag + "\t" + go_ids_P + "\t" + go_ids_C + "\t" +  go_ids_F + "\t" + function + "\n")
+			fo.write(locus_tag + "\t" + go_ids_P + "\t" + go_ids_C + "\t" +  go_ids_F + "\t" + function + "\n")
+			#print(cds)
+			#if len(cds)>2:
+			#	print("WRITING MATCH")
+			#	fo.write(cds[0] + "\t" + cds[1] + "\t" + cds[2] + "\t" + cds[3] + "\n")
+			#else:
+			#	print("WRITING BLANK")
+			#	fo.write(cds[0] + "\t" + "" + "\t" + "" + "\t" + "" + "\n")
 
 
 def main():

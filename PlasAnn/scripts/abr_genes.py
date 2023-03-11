@@ -177,8 +177,9 @@ def main(plasmid):
 					if str(currlocus) in locus:
 						finaline[3]=locus[str(currlocus)][0][5]
 						finaline[6]=locus[str(currlocus)][0][13]
-						finaline[7]=""
-						finaline[9]="Antibiotic Resistance-" + finaline[9]
+						#finaline[7]=""
+						finaline[10]="Antibiotic Resistance | " + finaline[9]
+						finaline[11]="Antibiotic Resistance | " + finaline[10]
 						# print(finaline[3])
 						# print(finaline[6])
 						# print(finaline[7])
