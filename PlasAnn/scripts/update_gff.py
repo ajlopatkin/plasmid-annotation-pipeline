@@ -1,4 +1,11 @@
-# update_gff.py
+'''
+update_gff.py
+
+DESCRIPTION: 
+
+Update gff with new abr gene and prokka information
+'''
+
 import csv
 import os
 import argparse

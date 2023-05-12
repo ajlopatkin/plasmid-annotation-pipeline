@@ -1,5 +1,9 @@
 #blast_orit.py
+'''
+orit_blast.py
 
+DESCRIPTION: get oriT match
+'''
 from Bio import SearchIO
 from Bio import SeqIO
 from Bio.Blast import NCBIWWW

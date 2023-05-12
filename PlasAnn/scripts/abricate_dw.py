@@ -1,5 +1,7 @@
 #!/usr/bin/python
 '''
+abricate_dw.py
+
 DESCRIPTION: Run abricate w/ncbi, card, resfinder, and plasmidfinder databases for each accession ID match
 '''
 import csv
@@ -7,11 +9,7 @@ import os
 import argparse
 
 def main(plasmid):
-	#with open("./../output/plasmids/" + plasmid + "/matches.csv") as csvfile:
-		#reader=csv.DictReader(csvfile, delimiter=' ', quotechar='|')
-		#for row in reader:
 		directory="./../output/plasmids/" + plasmid + "/ab_results"
-			#accession=str(row['Matches'])
 		os.system("mkdir " + directory)
 		databases=['ncbi', 'card', 'resfinder', 'plasmidfinder']
 		for base in databases:

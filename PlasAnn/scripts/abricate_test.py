@@ -1,5 +1,7 @@
 #!/usr/bin/python
 '''
+abricate_test.py
+
 DESCRIPTION: After running abricate with 4 different databases for each accession ID, check that the databases annotated the same resistance genes, and
 write the names of these genes to the final annotation for the plasmid. Also write the incompatibility group found by plasmidfinder to the final gff for the plasmid
 '''
@@ -15,13 +17,10 @@ import argparse
 
 def main(plasmid):
 	#Identify start location for each locus tag in the final tsv to verify res_gene match locations
-
 	res_genes=[]
 	inc_group=[]
 
-
 	#For each accession ID match, open their abricate files and sort their found resistance genes or inc groups into corresponding lists
-	#Print statements commented out; uncomment them for debugging purposes!
 	res_ncbi=[]
 	res_card=[]
 	res_finder=[]
@@ -80,10 +79,7 @@ def main(plasmid):
 
 	#sort through chosen inc groups and pick the one that was chosen most frequently
 	inc=[]
-	# print("INC GROUP")
 	for group in inc_group:
-		# print("INC")
-		# print(inc)
 		if len(inc)==0:
 			inc.append(group)
 		else:

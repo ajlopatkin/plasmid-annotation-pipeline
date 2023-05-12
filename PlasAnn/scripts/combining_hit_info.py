@@ -1,4 +1,10 @@
-# combining_hit_accession_information
+"""
+VISUALIZE.PY
+
+Description: Combine gene information from BLAST, Prokka, and Abricate to determine concensus gene
+
+"""
+
 from glob import glob
 import os
 import csv
@@ -136,13 +142,6 @@ def main(plasmid, comb_run):
     genbanks = glob("%s/*.gbk" % newpath)
     all_genes = []
     for file in genbanks:
-        #fileid=(file.split('/')[-1])[0:(file.split('/')[-1]).index('.')]
-        #if fileid not in accepted_match:
-        #    continue
-
-
-        #look at file header nad change if the bp is not numerical
-        #
 
         for i in SeqIO.parse(file, "gb"):
             
@@ -175,21 +174,6 @@ def main(plasmid, comb_run):
             except:
                 print("\nError parsing " + i.id)
                 continue
-
-   #  with open("./../output/plasmids/"+plasmid+"/abr_genes.txt") as f:
-#         lines = f.readlines()
-#         x = lines
-#         inc_group = x[0]
-#         inc_group = str(inc_group)
-#         inc_group = inc_group[0:4]
-# 
-#         f.close()
-# 
-#     for record in SeqIO.parse("./../backbone_genes/" + inc_group + "_backbone.fasta", "fasta"):
-#         the_id = (record.id)
-#         the_sequence = record.seq
-#         new_rec = SeqRecord(seq = the_sequence, id = the_id)
-#         all_genes.append(new_rec)
 
     SeqIO.write(all_genes, "./../output/plasmids/"+plasmid+"/genbank_genes/labelled_genes.fasta", "fasta")
 
@@ -252,8 +236,6 @@ def main(plasmid, comb_run):
                 pct_id =  alignment.hsps[0].identities/alignment.hsps[0].align_length*100
                 pct_cvg= (alignment.hsps[0].align_length/len(alignment.hsps[0].query))*100
                 blast_score=alignment.hsps[0].score
-                #print(alignment.hsps[0].query)
-                #print(len(alignment.hsps[0].query))
                 
                 the_desc = alignment.hit_def
                 gene_ind = the_desc.find("_")
@@ -284,7 +266,6 @@ def main(plasmid, comb_run):
                     organism_info[org] = organism_info.get(org,0) + 1
                     both[gene_org] = both.get(gene_org,0) + 1
                     blast_info[the_gene]=(pct_cvg, blast_score, e_val, pct_id)
-                    #print(blast_info[the_gene])
 
                 elif e_val < 1e-3 and pct_id > 99:
 
@@ -378,9 +359,6 @@ def main(plasmid, comb_run):
                         if x == key[0]: 
                             y[key[1]] = val
                             total+=val
-
-                    #total = 0
-
                     orgs = []
                     for key in y: 
                         total = total + y[key]
@@ -394,9 +372,6 @@ def main(plasmid, comb_run):
                         
                     ratio = popular/total
                     the_best[x] = ratio
-
-                    #ratio=total/total_rec
-                    #the_best[x]=ratio
             
                 #obtain max_gene, or most commonly seen gene at current locus
                 max_gene = max(the_best, key =the_best.get)
