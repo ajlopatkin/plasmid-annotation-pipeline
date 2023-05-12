@@ -1,6 +1,10 @@
 #!/usr/bin/python
 '''
-DESCRIPTION: PlasAnn takes in a fasta csv file and runs annotation pipeline for each plasmid
+PlasAnn.py 
+
+DESCRIPTION: 
+
+PlasAnn takes in a fasta csv file and runs annotation pipeline for each plasmid
 fasta in the csv file
 '''
 import os
@@ -175,8 +179,8 @@ if __name__=="__main__":
 	print("*******************\n")
 	print("Select running option: ")
 	print("0-Run entire program")
-	print("2-Run Blast")
 	print("1-Run linear regression ONLY (make sure you have all necessary files)")
+	print("2-Run Blast")
 	print("STOP-STOP PROGRAM")
 	run_all=-1
 	while True:
