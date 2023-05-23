@@ -7,7 +7,7 @@ comb_run=$2
 #Find acceptably annotated plasmids 
 python annotate.py $plasmid
 
-Use abricate to update annotation with antibiotic genes
+# Use abricate to update annotation with antibiotic genes
 conda activate abricate_env
 python abricate_dw.py $plasmid
 python abricate_test.py $plasmid
