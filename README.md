@@ -14,8 +14,8 @@ Annotates completed plasmid sequence fasta files
 **SET-UP YOUR COMPUTER:**
   1) REQUIRED PACKAGES: (The required package files can be found in the scripts folder)
      - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-     - Biopython
-       - conda install -c conda-forge biopython
+     - Main environment for running PlasAnn (plasann_env.yml in the scripts folder, containing biopython, blast, goatools, cogclassifier, reportlab, requests)
+       - conda env create --file ./scripts/plasann_env.yml
      - Prokka (prokka_env.yml is in the scripts folder)
        - conda env create --file ./scripts/prokka_env.yml
      - Abricate (abricate_env.yml is in the scripts folder)
