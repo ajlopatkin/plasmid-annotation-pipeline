@@ -27,7 +27,6 @@ def main(plasmid):
 	res_genes=[]
 
 	#For each accession ID match, open their abricate files and sort their found resistance genes or inc groups into corresponding lists
-	#Print statements commented out; uncomment them for debugging purposes!
 	res_ncbi=[]
 	res_card=[]
 	res_finder=[]
@@ -52,23 +51,17 @@ def main(plasmid):
 							pla_finder.append(inc_found)
 
 
-		#If a resistance gene is found by 2/3 of the resistance gene databases, it is added to the res_gene list
+	#If a resistance gene is found by 2/3 of the resistance gene databases, it is added to the res_gene list
 	compare=4
 	for list in found:
-			#print("CURR LIST OF RESISTANCE GENES IN PLASMID")
-			#print(list)
 			for resgene in list:
-			#	print("CURRENT GENE:" + resgene[5])
 				match=1
 				for cmp in found[compare%3]:
 					cmpgene=cmp[5]
 					if '-' in cmp[5]:
 						line_index=cmp[5].index('-')
-						# print(line_index)
-						# print(cmp[5][:5])
 						if line_index>=4 and line_index!=len(cmp[5]):
 							cmpgene=cmp[5][:line_index]
-			#		print("COMPARE TO " + cmp[5])
 					if (resgene[5].lower() in cmpgene.lower() or cmpgene.lower() in resgene[5].lower()) and abs(int(resgene[2])-int(cmp[2]))-300:
 						resloc=resgene[2]
 						cmploc=cmp[2]
@@ -76,28 +69,20 @@ def main(plasmid):
 							resgene[2]=cmp[2]
 
 						match=match+1
-			#			print("Match Found!")
-						#found[compare%3].remove(cmp)
 
 				for cmp in found[(compare+1)%3]:
-			#		print("COMPARE TO " + cmp[5])
 					cmpgene=cmp[5]
 					if '-' in cmp[5]:
 						line_index=cmp[5].index('-')
-						# print(line_index)
-						# print(cmp[5][:5])
 						if line_index>=4 and line_index!=len(cmp[5]):
 							cmpgene=cmp[5][:line_index]
 
-			#		print("COMPARE TO " + cmp[5])
 					if (resgene[5].lower() in cmpgene.lower() or cmpgene.lower() in resgene[5].lower()) and abs(int(resgene[2])-int(cmp[2]))-300:
 						resloc=resgene[2]
 						cmploc=cmp[2]
 						if resloc not in start_check and cmploc in start_check:
 							resgene[2]=cmp[2]
 						match=match+1
-						#print("Match Found!")
-						#found[(compare+1)%3].remove(cmp)
 
 				if match > 1:
 					if len(res_genes)==0:
@@ -111,16 +96,11 @@ def main(plasmid):
 								break
 						if appnd==1:
 							res_genes.append([resgene, match])
-				# else:
-				# 	print("NO MATCHES FOR " + resgene[5])
-				# 	print('\n')
 			compare=compare+1
 
 
-				#Sort through res_genes, match the same resistance genes from different accession ID's, and get concensus resistance gene(s)
+	#Sort through res_genes, match the same resistance genes from different accession ID's, and get concensus resistance gene(s)
 	final_res=[]
-	# print("RES-GENES")
-	# print(res_genes)
 	for resgene in res_genes:
 		if len(final_res)==0:
 			final_res.append(resgene)
@@ -133,26 +113,19 @@ def main(plasmid):
 						final=resgene
 						break
 				else:
-					# print("COMPARE COORDINATES TO CHECK IF REPLACEMENT IS NEEDED")
 					if (resgene[0][5] in final[0][5] or final[0][5] in resgene[0][5]) and (final[0][2] not in start_check and resgene[0][2] in start_check):
 						final[0][2]=resgene[0][2]
 			if locmatch==0:
 				final_res.append(resgene)
 
-	# print('\n')
-	# print("FINAL RESISTANCE GENE LIST")
-	# print('\n')
-	#determine locus locations for writing to final tsv
 	locus={}
-	# print("DETERMINE POSITIONS")
 
+	#determine final concensus 
 	for final in final_res:
 		change=0
-		
-
 		for start in start_check:
 			if int(final[0][2])==int(start):
-				locus[str(start_check.index(int(final[0][2])))]=final
+				locus[str(start_check.index(int(final[0][2]))+1)]=final
 				break
 			else:
 				if change==0:
@@ -166,9 +139,7 @@ def main(plasmid):
 			new_f.write("\n"+ str(final))
 		new_f.close()
 
-
 	#write resistance genes into their corresponding positions in the final annotation
-
 	with open("./../output/plasmids/" + plasmid + "/tmp.tsv", 'w') as tmp_file:
 		tmpwrite=csv.writer(tmp_file, delimiter='\t')
 		with open("./../output/plasmids/" + plasmid + "/the_final.tsv") as final_file:
@@ -180,11 +151,8 @@ def main(plasmid):
 					if str(currlocus) in locus:
 						finaline[3]=locus[str(currlocus)][0][5]
 						finaline[6]=locus[str(currlocus)][0][13]
-						finaline[7]=""
-						finaline[9]="Antibiotic Resistance"
-						# print(finaline[3])
-						# print(finaline[6])
-						# print(finaline[7])
+						finaline[10]="Antibiotic Resistance | " + finaline[9]
+						finaline[11]="Antibiotic Resistance | " + finaline[10]
 						
 				tmpwrite.writerow(finaline)	
 				currlocus+=1

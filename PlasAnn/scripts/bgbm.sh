@@ -2,11 +2,12 @@
 CONDA_BASE=$(conda info --base)
 source $CONDA_BASE/etc/profile.d/conda.sh
 plasmid=$1
+comb_run=$2
 
 #Find acceptably annotated plasmids 
 python annotate.py $plasmid
 
-#Use abricate to update annotation with antibiotic genes
+# Use abricate to update annotation with antibiotic genes
 conda activate abricate_env
 python abricate_dw.py $plasmid
 python abricate_test.py $plasmid
@@ -16,10 +17,14 @@ conda deactivate
 python prokka_default.py $plasmid
 
 # Label the plasmid based on genes
-python combining_hit_info.py $plasmid
+python combining_hit_info.py -p $plasmid -c $comb_run
 
+python oric_blast.py $plasmid
+python orit_blast.py $plasmid
+python TnFinder_loc.py $plasmid
+python COG_identify.py $plasmid
 
-python prokka2go_LB.py -i ./../output/plasmids/$plasmid/the_final.gbk -o ./../output/plasmids/$plasmid/prokka2go.txt -p $plasmid
+python prokka2go_LB.py -i ./../output/plasmids/$plasmid/the_final.tsv -o ./../output/plasmids/$plasmid/prokka2go.txt -p $plasmid
 
 python update_tsv.py $plasmid
 
@@ -27,6 +32,7 @@ python abr_genes.py $plasmid
 
 python update_gff.py $plasmid
 
+python final_edits.py $plasmid
 
 #Create plasmid map
 python visual_map.py $plasmid
