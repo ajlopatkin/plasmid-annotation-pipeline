@@ -311,4 +311,3 @@ dependencies:
   - xz=5.2.5=haf1e3a3_1
   - zlib=1.2.11=h6c3fc93_1014
   - zstd=1.4.9=h582d3a0_0
-prefix: /Users/alopatki/anaconda3/envs/prokka_env
