@@ -22,8 +22,17 @@ Annotates completed plasmid sequence fasta files
        - conda env create --file ./scripts/abricate_env.yml
      - CD-HIT and PSI-CD-HIT
        - Folder containing programs for CD-HIT is already stored in the scripts folder
+  2) Download and unzip files:
+     - Cog classification should be downloaded into the scripts folder
+       - wget ftp://ftp.ncbi.nih.gov/pub/mmdb/cdd/little_endian/Cog_LE.tar.gz
+     - Unzip the following files within the scripts folder:
+       - go-basic.obo.zip
+       - cd-hit.zip
+       - TnComp_finder.zip
+       - ori_db.zip
+       - GB2COG-master.zip
 
-  2) COMPUTER SETTINGS:
+  3) COMPUTER SETTINGS:
   The full program does take some time to run due to how much data needs to be processed for each plasmid. To make sure that there are no issues running the code in its entirety, set up your computer so it doesn’t turn off due to inactivity. To do this please go into your computer's settings and set up your computer so it  doesn’t turn off your screen or turn on the screen saver when inactive.
   Otherwise, your computer will enter its inactive state and shut down the program, leading to connection errors.
 
@@ -169,10 +178,10 @@ Order in which these scripts are called:
 
 **RUNNING PLASANN:**
 1) Download the folder uploaded on GitHub onto your computer. It contains all scripts involved in the program + folders needed at this current stage to run it
-2) Install conda + abricate + prokka (see SET-UP YOUR COMPUTER)
-3) Make sure all fasta files you want to analyse are in the fasta folder.
-4) Make sure that for every plasmid/fasta file, you have a corresponding folder in the plasmids folder with the NCBI BLAST .xml file containing 1000 accession ID hits for that plasmid (will be done automatically by the program in the future).
-5) On your Mac Terminal, use the cd command to access the “PlasAnn” folder (you can right click on the folder and click "Get Info" to see the file path for the folder to access it)
+2) Install conda + the following environments: abricate_env, prokka_env, plasann_env (see SET-UP YOUR COMPUTER)
+3) Make sure all fasta files you want to analyse are in a folder called fasta; this should be located in the same directory as scripts folder
+4) On your Mac Terminal, use the cd command to access the “PlasAnn” folder (you can right click on the folder and click "Get Info" to see the file path for the folder to access it)
+5) Activate the plasann_env conda environment to run the program
 6) Run python PlasAnn.py: 
    - python PlasAnn.py
    - Once you run it, the code will prompt you to enter a binary number (0 or 1).
@@ -180,7 +189,7 @@ Order in which these scripts are called:
       2) Enter 0 : Run the FULL pipeline (annotation + linear regression).
       3) Enter 2 : Run BLAST.
          - WARNING: Depending on how many plasmids you are analyzing, running the full pipeline will take a while. If you decide to do this, please go into your computer's settings and set up your computer so it doesn’t turn off your screen or turn on the screen saver when inactive. Do not turn off your computer while the program runs; this could lead to errors or could cause the program to stall!
-5) Wait for the program to finish! Do check on it from time to time to make sure that it’s running and let me know if any issues/questions arise.
+7) Wait for the program to finish! Do check on it from time to time to make sure that it’s running and let me know if any issues/questions arise.
 
 **ERROR HANDLING**
 1) Prokka/Abricate
