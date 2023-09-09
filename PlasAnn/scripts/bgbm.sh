@@ -5,7 +5,9 @@ plasmid=$1
 comb_run=$2
 
 #Find acceptably annotated plasmids 
+conda activate plasann_env
 python annotate.py $plasmid
+conda deactivate
 
 # Use abricate to update annotation with antibiotic genes
 conda activate abricate_env
@@ -14,9 +16,12 @@ python abricate_test.py $plasmid
 conda deactivate
 
 # Use prokka to get initial gbk annotation
+conda activate prokka_env
 python prokka_default.py $plasmid
+conda deactivate
 
 # Label the plasmid based on genes
+conda activate plasann_env
 python combining_hit_info.py -p $plasmid -c $comb_run
 
 python oric_blast.py $plasmid
