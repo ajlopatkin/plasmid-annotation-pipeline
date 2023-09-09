@@ -33,7 +33,7 @@ Annotates completed plasmid sequence fasta files
          ```
          conda create -n abricate_env -c conda-forge mamba
          conda activate abricate_env
-         mamba install -c bioconda abricate
+         mamba install -c bioconda abricate biopython
          ```
      - CD-HIT and PSI-CD-HIT
        - Folder containing programs for CD-HIT is already stored in the scripts folder
