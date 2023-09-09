@@ -12,14 +12,29 @@ Annotates completed plasmid sequence fasta files
   4) Error Handling
 
 **SET-UP YOUR COMPUTER:**
-  1) REQUIRED PACKAGES: (The required package files can be found in the scripts folder)
+  1) REQUIRED PACKAGES:
      - [Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-     - Main environment for running PlasAnn (plasann_env.yml in the scripts folder, containing biopython, blast, goatools, cogclassifier, reportlab, requests)
-       - conda env create --file ./scripts/plasann_env.yml
-     - Prokka (prokka_env.yml is in the scripts folder)
-       - conda env create --file ./scripts/prokka_env.yml
-     - Abricate (abricate_env.yml is in the scripts folder)
-       - conda env create --file ./scripts/abricate_env.yml
+     - Main environment for running PlasAnn (containing biopython, blast, goatools, cogclassifier, reportlab, requests)
+       - The dependencies between packages can be difficult to solve; we recommend using Conda + Mamba to install this environment by running:
+         ```
+         conda create -n plasann_env -c conda-forge mamba
+         conda activate plasann_env
+         mamba install -c bioconda biopython blast goatools cogclassifier reportlab requests altair 
+         ```
+     - Prokka
+       - Use either Conda or Conda + Mamba, i.e.
+         ```
+         conda create -n prokka_env -c conda-forge mamba
+         conda activate prokka_env
+         mamba install -c bioconda prokka
+         ```
+     - Abricate
+       - Use either Conda or Conda + Mamba, i.e.
+         ```
+         conda create -n abricate_env -c conda-forge mamba
+         conda activate abricate_env
+         mamba install -c bioconda abricate
+         ```
      - CD-HIT and PSI-CD-HIT
        - Folder containing programs for CD-HIT is already stored in the scripts folder
 
